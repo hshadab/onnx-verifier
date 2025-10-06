@@ -15,12 +15,50 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
             min-height: 100vh;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px 20px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-logos {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logos img {
+            max-width: 80%;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f1f5f9;
+            text-align: center;
+            margin-bottom: 25px;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            margin-left: 250px;
+            padding: 20px 30px;
+            min-height: 100vh;
         }
 
         .header {
@@ -372,36 +410,34 @@
         /* Tab Navigation */
         .tab-nav {
             display: flex;
+            flex-direction: column;
             gap: 10px;
-            margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .tab-btn {
-            flex: 1;
-            padding: 12px 20px;
+            width: 100%;
+            padding: 14px 16px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 4px;
             color: #94a3b8;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            text-align: left;
+            border-left: 3px solid transparent;
         }
 
         .tab-btn:hover {
             background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(99, 102, 241, 0.3);
+            border-left-color: rgba(99, 102, 241, 0.5);
             color: #cbd5e1;
         }
 
         .tab-btn.active {
-            background: rgba(99, 102, 241, 0.3);
-            border-color: rgba(99, 102, 241, 0.6);
+            background: rgba(99, 102, 241, 0.2);
+            border-left-color: rgba(99, 102, 241, 0.9);
             color: #e2e8f0;
         }
 
@@ -412,26 +448,74 @@
         .tab-content.active {
             display: block;
         }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 220px;
+            }
+
+            .container {
+                margin-left: 220px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .container {
+                margin-left: 0;
+            }
+
+            .tab-nav {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .tab-btn {
+                flex: 1 1 auto;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+            }
+
+            .tab-btn.active {
+                border-left-color: transparent;
+                border-bottom-color: rgba(99, 102, 241, 0.9);
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div style="display: flex; gap: 25px; align-items: center; margin-bottom: 10px;">
-                <img src="https://onnx.ai/onnx/_static/onnx-horizontal-white.png" alt="ONNX" style="height: 36px;">
-                <img src="https://cdn.prod.website-files.com/65d52b07d5bc41614daa723f/665df12739c532f45b665fe7_logo-novanet.svg" alt="NovaNet" style="height: 27px;">
-                <h1 style="margin: 0;">ONNX zkML Verifier</h1>
-            </div>
-            <div class="tagline" style="margin-bottom: 8px;">Cryptographically prove your model produced specific outputs</div>
-            <div style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
-                Upload an ONNX model, generate a proof, verify instantly in any browser · For API transparency, regulatory compliance, safety research, and verifiable AI testing.</div>
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logos">
+            <img src="https://onnx.ai/onnx/_static/onnx-horizontal-white.png" alt="ONNX" style="height: 24px;">
+            <img src="https://cdn.prod.website-files.com/65d52b07d5bc41614daa723f/665df12739c532f45b665fe7_logo-novanet.svg" alt="NovaNet" style="height: 20px;">
         </div>
+
+        <div class="sidebar-title">ONNX zkML Verifier</div>
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab('prove')">Prove and Verify</button>
             <button class="tab-btn" onclick="switchTab('verify')">Verify Existing Proof</button>
             <button class="tab-btn" onclick="switchTab('docs')">Docs</button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="container">
+        <div class="header">
+            <h1>ONNX zkML Verifier</h1>
+            <div class="tagline" style="margin-bottom: 8px;">Cryptographically prove your model produced specific outputs</div>
+            <div style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                Upload an ONNX model, generate a proof, verify instantly in any browser · For API transparency, regulatory compliance, safety research, and verifiable AI testing.</div>
         </div>
 
         <!-- Prove Tab (Default) -->
