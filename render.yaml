@@ -4,7 +4,6 @@ services:
     name: onnx-verifier-api
     env: node
     plan: starter
-    rootDir: onnx-verifier
     buildCommand: npm install
     startCommand: node server.js
     envVars:
@@ -17,7 +16,7 @@ services:
     name: onnx-verifier-ui
     env: node
     plan: starter
-    rootDir: onnx-verifier/ui
+    rootDir: ui
     buildCommand: npm install
     startCommand: node server.js
     envVars:
