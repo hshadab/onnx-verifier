@@ -17,6 +17,9 @@ const snarkjs = require('snarkjs');
 const app = express();
 const PORT = process.env.PORT || 9100;
 
+// Deployment mode: set to 'true' to disable JOLT proof generation
+const INFERENCE_ONLY_MODE = process.env.INFERENCE_ONLY_MODE === 'true';
+
 // Configure file upload (increased for large models like VGG-16, ResNet-50)
 const upload = multer({
     dest: 'uploads/',
@@ -163,18 +166,71 @@ async function runOnnxInference(modelPath, inputs) {
 /**
  * Generate REAL JOLT-Atlas zkML proof
  * This uses the actual JOLT-Atlas binary - NO SIMULATIONS
+ *
+ * In INFERENCE_ONLY_MODE, this generates mock proof data for deployment environments
+ * where the JOLT binary is not available.
  */
 async function generateJOLTProof(modelHash, testResults) {
-    const { spawn } = require('child_process');
     const startTime = Date.now();
+
+    // INFERENCE_ONLY_MODE: Return mock proof data without JOLT binary
+    if (INFERENCE_ONLY_MODE) {
+        console.log('[INFERENCE-ONLY] JOLT proof generation disabled for deployment');
+        console.log(`[INFERENCE-ONLY] Model hash: ${modelHash.substring(0, 16)}...`);
+        console.log(`[INFERENCE-ONLY] Test cases: ${testResults.length}`);
+
+        // Create mock proof structure
+        const proofData = {
+            proofSystem: 'JOLT-Atlas',
+            type: 'Inference-Only Mode (No zkML Proof)',
+            mode: 'INFERENCE_ONLY',
+            modelHash,
+            testResults: testResults.map(r => ({
+                input: r.input,
+                output: r.output
+            })),
+            mockProof: {
+                note: 'JOLT proof generation disabled in deployment mode',
+                system: 'JOLT-Atlas (a16z crypto)',
+                curve: 'BN254',
+                security: 'N/A - No proof generated',
+                warning: 'This is mock proof data. ONNX inference was run, but no cryptographic proof was generated.'
+            },
+            performance: {
+                proofGenerationMs: 0,
+                verificationMs: 0,
+                totalMs: 0
+            },
+            timestamp: new Date().toISOString()
+        };
+
+        const proofHash = '0x' + crypto.createHash('sha256')
+            .update(JSON.stringify(proofData))
+            .digest('hex');
+
+        console.log(`[INFERENCE-ONLY] Mock proof created: ${proofHash.substring(0, 16)}...`);
+
+        return {
+            proofHash,
+            proofSystem: 'JOLT-Atlas (Inference-Only Mode)',
+            proofData,
+            proofSize: JSON.stringify(proofData).length,
+            generationTimeMs: 0,
+            verificationTimeMs: 0,
+            mode: 'INFERENCE_ONLY'
+        };
+    }
+
+    // FULL MODE: Generate real JOLT proof
+    const { spawn } = require('child_process');
 
     try {
         console.log('[JOLT-Atlas] Starting REAL zkML proof generation...');
         console.log(`[JOLT-Atlas] Model hash: ${modelHash.substring(0, 16)}...`);
         console.log(`[JOLT-Atlas] Test cases: ${testResults.length}`);
 
-        // Path to JOLT-Atlas binary
-        const JOLT_BINARY = '/home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof';
+        // Path to JOLT-Atlas binary (local to this repository)
+        const JOLT_BINARY = path.join(__dirname, 'bin', 'simple_jolt_proof');
 
         // Check if binary exists
         if (!require('fs').existsSync(JOLT_BINARY)) {
@@ -375,13 +431,21 @@ app.post('/verify', upload.single('model'), async (req, res) => {
                 proofGenerationMs: proof.generationTimeMs,
                 totalTimeMs: testResults.reduce((sum, r) => sum + r.inferenceTimeMs, 0) + proof.generationTimeMs
             },
-            verifiedAt: new Date().toISOString()
+            verifiedAt: new Date().toISOString(),
+            // Add mode indicator
+            mode: INFERENCE_ONLY_MODE ? 'INFERENCE_ONLY' : 'FULL_VERIFICATION',
+            modeNote: INFERENCE_ONLY_MODE ?
+                'ONNX inference completed successfully. JOLT zkML proof generation disabled in deployment mode.' :
+                'Full zkML verification with JOLT-Atlas cryptographic proof'
         };
 
         // Store verification
         verifications.set(verificationId, verification);
 
         console.log(`[SUCCESS] Verification: ${verificationId.substring(0, 16)}... | Proof: ${proof.proofHash.substring(0, 16)}...`);
+        if (INFERENCE_ONLY_MODE) {
+            console.log(`[MODE] Running in INFERENCE_ONLY mode - JOLT proofs disabled`);
+        }
 
         res.json({
             success: true,
