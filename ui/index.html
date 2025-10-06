@@ -698,6 +698,11 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
     </script>
 
     <script>
+        // API URL detection - use production API when deployed, localhost when developing
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:9100'
+            : 'https://onnx-verifier-production.up.railway.app';
+
         // Tab switching function
         function switchTab(tabName) {
             // Hide all tabs
@@ -1088,7 +1093,7 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 formData.append('testInputs', JSON.stringify(testInputs));
 
                 // Call API
-                const response = await fetch('http://localhost:9100/verify', {
+                const response = await fetch(`${API_URL}/verify`, {
                     method: 'POST',
                     body: formData
                 });
@@ -1362,7 +1367,7 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         // Download proof file
         async function downloadProof(verificationId) {
             try {
-                const response = await fetch(`http://localhost:9100/download-proof/${verificationId}`);
+                const response = await fetch(`${API_URL}/download-proof/${verificationId}`);
                 const proofData = await response.json();
 
                 // Create download link
