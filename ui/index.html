@@ -699,9 +699,18 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
 
     <script>
         // API URL detection - use production API when deployed, localhost when developing
-        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:9100'
-            : 'https://onnx-verifier-production.up.railway.app';
+        const API_URL = (() => {
+            const hostname = window.location.hostname;
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return 'http://localhost:9100';
+            }
+            // For Render deployment - replace -ui with -api
+            if (hostname.includes('onrender.com')) {
+                return `https://${hostname.replace('-ui', '-api')}`;
+            }
+            // Fallback for other deployments
+            return 'https://onnx-verifier-api.onrender.com';
+        })();
 
         // Tab switching function
         function switchTab(tabName) {
