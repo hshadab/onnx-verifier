@@ -4,4 +4,3 @@ uploads/
 .env
 
 # Generated ONNX models (create with: python3 create_vision_models.py)
-*.onnx
