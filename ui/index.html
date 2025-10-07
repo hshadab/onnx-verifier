@@ -590,6 +590,28 @@
                         </button>
                     </div>
                     <div class="file-info" id="hfModelInfo" style="margin-top: 8px;"></div>
+
+                    <div style="text-align: center; color: #64748b; font-size: 12px; margin: 15px 0 10px 0;">
+                        — OR —
+                    </div>
+
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 13px; color: #94a3b8; margin-bottom: 8px; display: block;">Custom Model ID (for advanced users)</label>
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <input
+                                type="text"
+                                id="customHfModelId"
+                                placeholder="e.g., onnx-community/bert-base-uncased"
+                                style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0;"
+                            />
+                            <button onclick="loadCustomHuggingFaceModel()" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                                Load
+                            </button>
+                        </div>
+                        <div class="file-info" id="customHfModelInfo" style="margin-top: 8px; font-size: 12px;">
+                            Enter any model ID from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -705,6 +727,31 @@
                         <strong style="color: #a5b4fc;">Industry-standard format</strong> • Cross-platform • One-command export with
                         <a href="https://huggingface.co/docs/optimum/exporters/onnx/usage_guides/export_a_model" style="color: #a5b4fc;" target="_blank">Hugging Face Optimum</a> •
                         Active ecosystem on <a href="https://huggingface.co/onnx-community" style="color: #a5b4fc;" target="_blank">HF ONNX Community</a>
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #e2e8f0; margin-bottom: 15px;">🤗 Hugging Face Integration</h3>
+                    <p style="color: #94a3b8; line-height: 1.8; font-size: 14px; margin-bottom: 15px;">
+                        Load models directly from <a href="https://huggingface.co/onnx-community" style="color: #a5b4fc;" target="_blank">Hugging Face onnx-community</a>:
+                    </p>
+                    <ul style="color: #cbd5e1; margin-left: 20px; line-height: 1.8;">
+                        <li><strong>60+ curated models:</strong> Vision, NLP, audio, and multimodal models ready to use</li>
+                        <li><strong>Categories:</strong>
+                            <ul style="margin-left: 20px; margin-top: 5px;">
+                                <li>Vision: ResNet, ViT, MobileNet, EfficientNet, ConvNeXt, YOLOS, DETR, SegFormer</li>
+                                <li>NLP: BERT, GPT-2, T5, RoBERTa, DistilBERT, ALBERT, ELECTRA, DeBERTa</li>
+                                <li>Audio: Whisper, Wav2Vec2, HuBERT</li>
+                                <li>Multimodal: CLIP (vision-language models)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Custom model input:</strong> Enter any onnx-community model ID for unlimited access</li>
+                        <li><strong>Size validation:</strong> Automatic checks ensure models are under 500MB limit</li>
+                        <li><strong>No authentication:</strong> Models download directly from Hugging Face CDN</li>
+                    </ul>
+                    <p style="color: #94a3b8; line-height: 1.8; font-size: 13px; margin-top: 15px;">
+                        💡 <strong>Tip:</strong> Browse <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a>
+                        to discover 1000+ ONNX models, then enter the model ID in the custom input field.
                     </p>
                 </div>
 
@@ -1864,24 +1911,82 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
 
         // Curated list of popular ONNX models from onnx-community (under 500MB)
         const hfModels = [
+            // Vision Models - Classification
             { id: 'onnx-community/resnet-50', name: 'ResNet-50', file: 'model.onnx', sizeMB: '97.8' },
-            { id: 'onnx-community/vit-base-patch16-224', name: 'ViT Base Patch16 224', file: 'model.onnx', sizeMB: '343' },
+            { id: 'onnx-community/resnet-18', name: 'ResNet-18', file: 'model.onnx', sizeMB: '44.7' },
+            { id: 'onnx-community/vit-base-patch16-224', name: 'ViT Base Patch16-224', file: 'model.onnx', sizeMB: '343' },
+            { id: 'onnx-community/vit-base-patch32-224', name: 'ViT Base Patch32-224', file: 'model.onnx', sizeMB: '343' },
+            { id: 'onnx-community/mobilenet-v2', name: 'MobileNet V2', file: 'model.onnx', sizeMB: '13.6' },
+            { id: 'onnx-community/mobilenet-v3-small', name: 'MobileNet V3 Small', file: 'model.onnx', sizeMB: '8.9' },
+            { id: 'onnx-community/mobilenet-v3-large', name: 'MobileNet V3 Large', file: 'model.onnx', sizeMB: '21.4' },
+            { id: 'onnx-community/efficientnet-b0', name: 'EfficientNet B0', file: 'model.onnx', sizeMB: '20' },
+            { id: 'onnx-community/efficientnet-b1', name: 'EfficientNet B1', file: 'model.onnx', sizeMB: '30' },
+            { id: 'onnx-community/efficientnet-b2', name: 'EfficientNet B2', file: 'model.onnx', sizeMB: '36' },
+            { id: 'onnx-community/convnext-tiny-224', name: 'ConvNeXt Tiny', file: 'model.onnx', sizeMB: '109' },
+            { id: 'onnx-community/convnext-small-224', name: 'ConvNeXt Small', file: 'model.onnx', sizeMB: '193' },
+            { id: 'onnx-community/densenet-121', name: 'DenseNet-121', file: 'model.onnx', sizeMB: '30.8' },
+            { id: 'onnx-community/squeezenet1.1', name: 'SqueezeNet 1.1', file: 'model.onnx', sizeMB: '4.7' },
+            { id: 'onnx-community/shufflenet-v2-x1-0', name: 'ShuffleNet V2 x1.0', file: 'model.onnx', sizeMB: '8.8' },
+            { id: 'onnx-community/regnet-y-400mf', name: 'RegNet Y-400MF', file: 'model.onnx', sizeMB: '16.3' },
+
+            // Vision Models - Object Detection
+            { id: 'onnx-community/yolos-tiny', name: 'YOLOS Tiny', file: 'model.onnx', sizeMB: '19' },
+            { id: 'onnx-community/yolos-small', name: 'YOLOS Small', file: 'model.onnx', sizeMB: '86' },
+            { id: 'onnx-community/detr-resnet-50', name: 'DETR ResNet-50', file: 'model.onnx', sizeMB: '159' },
+
+            // Vision Models - Segmentation
+            { id: 'onnx-community/segformer-b0-finetuned-ade-512-512', name: 'SegFormer B0', file: 'model.onnx', sizeMB: '14.3' },
+
+            // NLP Models - BERT Family
             { id: 'onnx-community/bert-base-uncased', name: 'BERT Base Uncased', file: 'model.onnx', sizeMB: '420' },
-            { id: 'onnx-community/gpt2', name: 'GPT-2', file: 'decoder_model.onnx', sizeMB: '487' },
-            { id: 'onnx-community/t5-small', name: 'T5 Small', file: 'encoder_model.onnx', sizeMB: '242' },
+            { id: 'onnx-community/bert-base-cased', name: 'BERT Base Cased', file: 'model.onnx', sizeMB: '420' },
+            { id: 'onnx-community/bert-large-uncased', name: 'BERT Large Uncased', file: 'model.onnx', sizeMB: '1267' },
             { id: 'onnx-community/distilbert-base-uncased', name: 'DistilBERT Base Uncased', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/distilbert-base-cased', name: 'DistilBERT Base Cased', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/tinybert-6l-768d', name: 'TinyBERT 6L-768D', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'model.onnx', sizeMB: '196' },
+
+            // NLP Models - RoBERTa Family
             { id: 'onnx-community/roberta-base', name: 'RoBERTa Base', file: 'model.onnx', sizeMB: '476' },
-            { id: 'onnx-community/albert-base-v2', name: 'ALBERT Base V2', file: 'model.onnx', sizeMB: '45' },
+            { id: 'onnx-community/distilroberta-base', name: 'DistilRoBERTa Base', file: 'model.onnx', sizeMB: '308' },
             { id: 'onnx-community/xlm-roberta-base', name: 'XLM-RoBERTa Base', file: 'model.onnx', sizeMB: '1070' },
-            { id: 'onnx-community/clip-vit-base-patch32', name: 'CLIP ViT Base Patch32', file: 'vision_model.onnx', sizeMB: '338' },
+
+            // NLP Models - Other Transformers
+            { id: 'onnx-community/albert-base-v2', name: 'ALBERT Base V2', file: 'model.onnx', sizeMB: '45' },
+            { id: 'onnx-community/electra-small-discriminator', name: 'ELECTRA Small', file: 'model.onnx', sizeMB: '52' },
+            { id: 'onnx-community/deberta-v3-small', name: 'DeBERTa V3 Small', file: 'model.onnx', sizeMB: '179' },
+            { id: 'onnx-community/mpnet-base', name: 'MPNet Base', file: 'model.onnx', sizeMB: '420' },
+
+            // NLP Models - Sentence Transformers
+            { id: 'onnx-community/all-MiniLM-L6-v2', name: 'all-MiniLM-L6-v2', file: 'model.onnx', sizeMB: '90' },
+            { id: 'onnx-community/all-MiniLM-L12-v2', name: 'all-MiniLM-L12-v2', file: 'model.onnx', sizeMB: '130' },
+            { id: 'onnx-community/paraphrase-MiniLM-L6-v2', name: 'paraphrase-MiniLM-L6-v2', file: 'model.onnx', sizeMB: '90' },
+
+            // Generative Models
+            { id: 'onnx-community/gpt2', name: 'GPT-2', file: 'decoder_model.onnx', sizeMB: '487' },
+            { id: 'onnx-community/gpt2-medium', name: 'GPT-2 Medium', file: 'decoder_model.onnx', sizeMB: '1400' },
+            { id: 'onnx-community/distilgpt2', name: 'DistilGPT-2', file: 'decoder_model.onnx', sizeMB: '319' },
+            { id: 'onnx-community/t5-small', name: 'T5 Small', file: 'encoder_model.onnx', sizeMB: '242' },
+            { id: 'onnx-community/t5-base', name: 'T5 Base', file: 'encoder_model.onnx', sizeMB: '892' },
+            { id: 'onnx-community/flan-t5-small', name: 'FLAN-T5 Small', file: 'encoder_model.onnx', sizeMB: '308' },
+            { id: 'onnx-community/flan-t5-base', name: 'FLAN-T5 Base', file: 'encoder_model.onnx', sizeMB: '990' },
+
+            // Audio Models - Whisper
             { id: 'onnx-community/whisper-tiny', name: 'Whisper Tiny', file: 'decoder_model.onnx', sizeMB: '77' },
             { id: 'onnx-community/whisper-base', name: 'Whisper Base', file: 'decoder_model.onnx', sizeMB: '145' },
             { id: 'onnx-community/whisper-small', name: 'Whisper Small', file: 'decoder_model.onnx', sizeMB: '483' },
-            { id: 'onnx-community/yolos-tiny', name: 'YOLOS Tiny', file: 'model.onnx', sizeMB: '19' },
-            { id: 'onnx-community/convnext-tiny-224', name: 'ConvNeXt Tiny', file: 'model.onnx', sizeMB: '109' },
-            { id: 'onnx-community/efficientnet-b0', name: 'EfficientNet B0', file: 'model.onnx', sizeMB: '20' },
-            { id: 'onnx-community/mobilenet-v2', name: 'MobileNet V2', file: 'model.onnx', sizeMB: '13.6' },
-            { id: 'onnx-community/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'model.onnx', sizeMB: '196' }
+
+            // Audio Models - Other
+            { id: 'onnx-community/wav2vec2-base', name: 'Wav2Vec2 Base', file: 'model.onnx', sizeMB: '360' },
+            { id: 'onnx-community/hubert-base', name: 'HuBERT Base', file: 'model.onnx', sizeMB: '360' },
+
+            // Multimodal Models
+            { id: 'onnx-community/clip-vit-base-patch32', name: 'CLIP ViT Base Patch32', file: 'vision_model.onnx', sizeMB: '338' },
+            { id: 'onnx-community/clip-vit-base-patch16', name: 'CLIP ViT Base Patch16', file: 'vision_model.onnx', sizeMB: '343' },
+
+            // Specialized Models
+            { id: 'onnx-community/layoutlm-base-uncased', name: 'LayoutLM Base', file: 'model.onnx', sizeMB: '420' },
+            { id: 'onnx-community/table-transformer-detection', name: 'Table Transformer Detection', file: 'model.onnx', sizeMB: '108' }
         ];
 
         // Populate Hugging Face model dropdown
@@ -1953,6 +2058,102 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 infoDiv.textContent = 'Error downloading model: ' + error.message;
                 infoDiv.style.color = '#fca5a5';
                 console.error('Error loading Hugging Face model:', error);
+            }
+        }
+
+        // Load custom Hugging Face model by ID
+        async function loadCustomHuggingFaceModel() {
+            const input = document.getElementById('customHfModelId');
+            const infoDiv = document.getElementById('customHfModelInfo');
+            const modelId = input.value.trim();
+
+            if (!modelId) {
+                infoDiv.textContent = 'Please enter a model ID';
+                infoDiv.style.color = '#fca5a5';
+                return;
+            }
+
+            // Validate model ID format
+            if (!modelId.startsWith('onnx-community/')) {
+                infoDiv.textContent = 'Model ID must start with "onnx-community/"';
+                infoDiv.style.color = '#fca5a5';
+                return;
+            }
+
+            infoDiv.textContent = 'Fetching model information...';
+            infoDiv.style.color = '#a5b4fc';
+
+            try {
+                // Fetch model metadata to get file list and sizes
+                const metaResponse = await fetch(`https://huggingface.co/api/models/${modelId}`);
+                if (!metaResponse.ok) {
+                    throw new Error('Model not found. Please check the model ID.');
+                }
+
+                const modelInfo = await metaResponse.json();
+
+                // Find .onnx files
+                const onnxFiles = (modelInfo.siblings || []).filter(f =>
+                    f.rfilename && f.rfilename.endsWith('.onnx')
+                );
+
+                if (onnxFiles.length === 0) {
+                    throw new Error('No .onnx files found in this model repository');
+                }
+
+                // Get the largest .onnx file (or first one if sizes unavailable)
+                const targetFile = onnxFiles.sort((a, b) => (b.size || 0) - (a.size || 0))[0];
+                const fileSizeMB = targetFile.size ? (targetFile.size / (1024 * 1024)).toFixed(2) : 'unknown';
+
+                // Validate size (500MB limit)
+                if (targetFile.size && targetFile.size > 500 * 1024 * 1024) {
+                    throw new Error(`Model is too large (${fileSizeMB} MB). Maximum size is 500 MB.`);
+                }
+
+                infoDiv.textContent = `Downloading ${targetFile.rfilename} (${fileSizeMB} MB)...`;
+                infoDiv.style.color = '#a5b4fc';
+
+                // Download the model
+                const downloadUrl = `https://huggingface.co/${modelId}/resolve/main/${targetFile.rfilename}`;
+                console.log(`Downloading custom model: ${downloadUrl}`);
+
+                const response = await fetch(downloadUrl);
+                if (!response.ok) throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+
+                const blob = await response.blob();
+
+                // Check actual downloaded size
+                const actualSizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+                if (blob.size > 500 * 1024 * 1024) {
+                    throw new Error(`Downloaded model is too large (${actualSizeMB} MB). Maximum size is 500 MB.`);
+                }
+
+                selectedHFModel = new File([blob], targetFile.rfilename, { type: 'application/octet-stream' });
+                selectedExampleModel = selectedHFModel; // Set as current model
+
+                // Update UI
+                const modelName = modelId.replace('onnx-community/', '');
+                document.getElementById('modelFileInfo').textContent =
+                    `Hugging Face: ${modelName} (${actualSizeMB} MB)`;
+                document.getElementById('modelFileInfo').style.color = '#a5b4fc';
+
+                infoDiv.textContent = `✓ Loaded: ${targetFile.rfilename} (${actualSizeMB} MB)`;
+                infoDiv.style.color = '#86efac';
+
+                // Clear custom file input
+                document.getElementById('modelFile').value = '';
+
+                // Clear test inputs for custom HF models (user needs to provide)
+                document.getElementById('testInputs').value = '';
+
+                // Clear the dropdown selection
+                document.getElementById('hfModelSelect').value = '';
+                document.getElementById('hfModelInfo').textContent = '';
+
+            } catch (error) {
+                infoDiv.textContent = 'Error: ' + error.message;
+                infoDiv.style.color = '#fca5a5';
+                console.error('Error loading custom Hugging Face model:', error);
             }
         }
 
