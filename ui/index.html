@@ -219,23 +219,6 @@
             pointer-events: none;
         }
 
-        /* Loading Animation - Text Glow Effect */
-        .scenario-btn.loading .title,
-        .scenario-btn.loading .desc {
-            animation: text-glow 1.5s ease-in-out infinite;
-        }
-
-        @keyframes text-glow {
-            0%, 100% {
-                text-shadow: 0 0 5px rgba(99, 102, 241, 0.5);
-                opacity: 0.8;
-            }
-            50% {
-                text-shadow: 0 0 15px rgba(99, 102, 241, 1), 0 0 25px rgba(99, 102, 241, 0.8);
-                opacity: 1;
-            }
-        }
-
         /* OPTION 2: Pulse Glow (uncomment to use)
         .scenario-btn.loading {
             animation: pulse-glow 1.5s ease-in-out infinite;
@@ -446,6 +429,21 @@
             margin: 0 auto 20px;
         }
 
+        .model-loading-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top: 2px solid rgba(99, 102, 241, 1);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        .model-loading-spinner.active {
+            display: block;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -608,6 +606,7 @@
                     <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 15px 0;">
                         Test inputs are automatically loaded for example models.
                     </p>
+                    <div class="model-loading-spinner" id="modelLoadingSpinner"></div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                         <button class="scenario-btn" onclick="loadExampleModel('authorization', event)">
                             <div class="title">🔒 Authorization</div>
@@ -1126,7 +1125,11 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         async function loadExampleModel(modelType, event) {
             currentModelType = modelType;
 
-            // Add loading state with glow effect
+            // Show spinner above buttons
+            const spinner = document.getElementById('modelLoadingSpinner');
+            spinner.classList.add('active');
+
+            // Add loading state to button
             const clickedBtn = event && event.target ? event.target.closest('.scenario-btn') : null;
             if (clickedBtn) {
                 document.querySelectorAll('.scenario-btn').forEach(btn => {
@@ -1182,6 +1185,9 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 if (clickedBtn) {
                     clickedBtn.classList.remove('loading');
                 }
+            } finally {
+                // Hide spinner
+                spinner.classList.remove('active');
             }
         }
 
