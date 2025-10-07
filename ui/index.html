@@ -154,7 +154,8 @@
         }
 
         .form-group input[type="file"],
-        .form-group textarea {
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             padding: 12px;
             background: rgba(255, 255, 255, 0.05);
@@ -165,8 +166,14 @@
             transition: all 0.3s;
         }
 
+        .form-group select option {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
         .form-group input:focus,
-        .form-group textarea:focus {
+        .form-group textarea:focus,
+        .form-group select:focus {
             outline: none;
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(99, 102, 241, 0.5);
@@ -572,6 +579,26 @@
                             <div class="desc">Mobile-optimized (14MB)</div>
                         </button>
                     </div>
+                </div>
+
+                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin: 15px 0;">
+                    — OR —
+                </div>
+
+                <div class="form-group">
+                    <label for="hfModelSelect">Import from Hugging Face 🤗</label>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 10px 0;">
+                        Select a model from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a> (max 500MB)
+                    </p>
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <select id="hfModelSelect" style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0; cursor: pointer;">
+                            <option value="">Loading models...</option>
+                        </select>
+                        <button onclick="loadHuggingFaceModel()" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                            Load Model
+                        </button>
+                    </div>
+                    <div class="file-info" id="hfModelInfo" style="margin-top: 8px;"></div>
                 </div>
 
                 <div class="form-group">
@@ -1602,9 +1629,130 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             }
         }
 
+        // Hugging Face model management
+        let hfModels = [];
+        let selectedHFModel = null;
+
+        // Fetch models from Hugging Face onnx-community
+        async function fetchHuggingFaceModels() {
+            const select = document.getElementById('hfModelSelect');
+            try {
+                // Fetch models from onnx-community
+                const response = await fetch('https://huggingface.co/api/models?author=onnx-community&limit=100');
+                const models = await response.json();
+
+                // Filter and process models
+                const processedModels = [];
+
+                for (const model of models) {
+                    try {
+                        // Fetch model info with file metadata
+                        const modelInfoResponse = await fetch(`https://huggingface.co/api/models/${model.id}`);
+                        const modelInfo = await modelInfoResponse.json();
+
+                        // Find .onnx files and calculate total size
+                        const onnxFiles = (modelInfo.siblings || []).filter(f => f.rfilename && f.rfilename.endsWith('.onnx'));
+
+                        if (onnxFiles.length > 0) {
+                            // Calculate total size of all ONNX files
+                            const totalSize = onnxFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+                            const sizeMB = totalSize / (1024 * 1024);
+
+                            // Only include models under 500MB
+                            if (sizeMB <= 500 && sizeMB > 0) {
+                                processedModels.push({
+                                    id: model.id,
+                                    name: model.id.replace('onnx-community/', ''),
+                                    sizeMB: sizeMB.toFixed(2),
+                                    sizeBytes: totalSize,
+                                    files: onnxFiles,
+                                    downloads: model.downloads || 0,
+                                    likes: model.likes || 0
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.log(`Skipping ${model.id}: ${err.message}`);
+                    }
+                }
+
+                // Sort by popularity (downloads)
+                processedModels.sort((a, b) => b.downloads - a.downloads);
+
+                hfModels = processedModels;
+
+                // Populate dropdown
+                select.innerHTML = '<option value="">Select a model...</option>';
+                hfModels.forEach((model, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${model.name} (${model.sizeMB} MB)`;
+                    select.appendChild(option);
+                });
+
+                console.log(`Loaded ${hfModels.length} ONNX models from Hugging Face`);
+            } catch (error) {
+                select.innerHTML = '<option value="">Error loading models</option>';
+                console.error('Error fetching Hugging Face models:', error);
+            }
+        }
+
+        // Load selected Hugging Face model
+        async function loadHuggingFaceModel() {
+            const select = document.getElementById('hfModelSelect');
+            const infoDiv = document.getElementById('hfModelInfo');
+            const modelIndex = parseInt(select.value);
+
+            if (isNaN(modelIndex) || modelIndex < 0 || modelIndex >= hfModels.length) {
+                infoDiv.textContent = 'Please select a model first';
+                infoDiv.style.color = '#fca5a5';
+                return;
+            }
+
+            const model = hfModels[modelIndex];
+
+            infoDiv.textContent = 'Downloading model from Hugging Face...';
+            infoDiv.style.color = '#a5b4fc';
+
+            try {
+                // Download the first .onnx file (or largest one)
+                const fileToDownload = model.files.sort((a, b) => (b.size || 0) - (a.size || 0))[0];
+                const downloadUrl = `https://huggingface.co/${model.id}/resolve/main/${fileToDownload.rfilename}`;
+
+                console.log(`Downloading: ${downloadUrl}`);
+
+                const response = await fetch(downloadUrl);
+                if (!response.ok) throw new Error('Failed to download model');
+
+                const blob = await response.blob();
+                selectedHFModel = new File([blob], fileToDownload.rfilename, { type: 'application/octet-stream' });
+                selectedExampleModel = selectedHFModel; // Set as current model
+
+                // Update UI
+                document.getElementById('modelFileInfo').textContent =
+                    `Hugging Face: ${model.name} (${model.sizeMB} MB)`;
+                document.getElementById('modelFileInfo').style.color = '#a5b4fc';
+
+                infoDiv.textContent = `✓ Loaded: ${fileToDownload.rfilename}`;
+                infoDiv.style.color = '#86efac';
+
+                // Clear custom file input
+                document.getElementById('modelFile').value = '';
+
+                // Clear test inputs for HF models (user needs to provide)
+                document.getElementById('testInputs').value = '';
+
+            } catch (error) {
+                infoDiv.textContent = 'Error downloading model: ' + error.message;
+                infoDiv.style.color = '#fca5a5';
+                console.error('Error loading Hugging Face model:', error);
+            }
+        }
+
         // Load default scenario on page load
         window.addEventListener('DOMContentLoaded', () => {
             loadScenario('legit');
+            fetchHuggingFaceModels(); // Load HF models
         });
     </script>
 </body>
