@@ -219,23 +219,21 @@
             pointer-events: none;
         }
 
-        /* Loading Animation Options - Choose one by uncommenting */
-
-        /* OPTION 1: Shimmer Effect */
-        .scenario-btn.loading::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            animation: shimmer 1.5s infinite;
+        /* Loading Animation - Text Glow Effect */
+        .scenario-btn.loading .title,
+        .scenario-btn.loading .desc {
+            animation: text-glow 1.5s ease-in-out infinite;
         }
 
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
+        @keyframes text-glow {
+            0%, 100% {
+                text-shadow: 0 0 5px rgba(99, 102, 241, 0.5);
+                opacity: 0.8;
+            }
+            50% {
+                text-shadow: 0 0 15px rgba(99, 102, 241, 1), 0 0 25px rgba(99, 102, 241, 0.8);
+                opacity: 1;
+            }
         }
 
         /* OPTION 2: Pulse Glow (uncomment to use)
@@ -1128,7 +1126,7 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         async function loadExampleModel(modelType, event) {
             currentModelType = modelType;
 
-            // Add loading state
+            // Add loading state with glow effect
             const clickedBtn = event && event.target ? event.target.closest('.scenario-btn') : null;
             if (clickedBtn) {
                 document.querySelectorAll('.scenario-btn').forEach(btn => {
