@@ -1630,71 +1630,46 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         }
 
         // Hugging Face model management
-        let hfModels = [];
         let selectedHFModel = null;
 
-        // Fetch models from Hugging Face onnx-community
-        async function fetchHuggingFaceModels() {
+        // Curated list of popular ONNX models from onnx-community (under 500MB)
+        const hfModels = [
+            { id: 'onnx-community/resnet-50', name: 'ResNet-50', file: 'model.onnx', sizeMB: '97.8' },
+            { id: 'onnx-community/vit-base-patch16-224', name: 'ViT Base Patch16 224', file: 'model.onnx', sizeMB: '343' },
+            { id: 'onnx-community/bert-base-uncased', name: 'BERT Base Uncased', file: 'model.onnx', sizeMB: '420' },
+            { id: 'onnx-community/gpt2', name: 'GPT-2', file: 'decoder_model.onnx', sizeMB: '487' },
+            { id: 'onnx-community/t5-small', name: 'T5 Small', file: 'encoder_model.onnx', sizeMB: '242' },
+            { id: 'onnx-community/distilbert-base-uncased', name: 'DistilBERT Base Uncased', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/roberta-base', name: 'RoBERTa Base', file: 'model.onnx', sizeMB: '476' },
+            { id: 'onnx-community/albert-base-v2', name: 'ALBERT Base V2', file: 'model.onnx', sizeMB: '45' },
+            { id: 'onnx-community/xlm-roberta-base', name: 'XLM-RoBERTa Base', file: 'model.onnx', sizeMB: '1070' },
+            { id: 'onnx-community/clip-vit-base-patch32', name: 'CLIP ViT Base Patch32', file: 'vision_model.onnx', sizeMB: '338' },
+            { id: 'onnx-community/whisper-tiny', name: 'Whisper Tiny', file: 'decoder_model.onnx', sizeMB: '77' },
+            { id: 'onnx-community/whisper-base', name: 'Whisper Base', file: 'decoder_model.onnx', sizeMB: '145' },
+            { id: 'onnx-community/whisper-small', name: 'Whisper Small', file: 'decoder_model.onnx', sizeMB: '483' },
+            { id: 'onnx-community/yolos-tiny', name: 'YOLOS Tiny', file: 'model.onnx', sizeMB: '19' },
+            { id: 'onnx-community/convnext-tiny-224', name: 'ConvNeXt Tiny', file: 'model.onnx', sizeMB: '109' },
+            { id: 'onnx-community/efficientnet-b0', name: 'EfficientNet B0', file: 'model.onnx', sizeMB: '20' },
+            { id: 'onnx-community/mobilenet-v2', name: 'MobileNet V2', file: 'model.onnx', sizeMB: '13.6' },
+            { id: 'onnx-community/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'model.onnx', sizeMB: '196' }
+        ];
+
+        // Populate Hugging Face model dropdown
+        function populateHuggingFaceModels() {
             const select = document.getElementById('hfModelSelect');
-            try {
-                // Fetch models from onnx-community
-                const response = await fetch('https://huggingface.co/api/models?author=onnx-community&limit=100');
-                const models = await response.json();
+            select.innerHTML = '<option value="">Select a model...</option>';
 
-                // Filter and process models
-                const processedModels = [];
+            // Filter models under 500MB
+            const validModels = hfModels.filter(m => parseFloat(m.sizeMB) <= 500);
 
-                for (const model of models) {
-                    try {
-                        // Fetch model info with file metadata
-                        const modelInfoResponse = await fetch(`https://huggingface.co/api/models/${model.id}`);
-                        const modelInfo = await modelInfoResponse.json();
+            validModels.forEach((model, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${model.name} (${model.sizeMB} MB)`;
+                select.appendChild(option);
+            });
 
-                        // Find .onnx files and calculate total size
-                        const onnxFiles = (modelInfo.siblings || []).filter(f => f.rfilename && f.rfilename.endsWith('.onnx'));
-
-                        if (onnxFiles.length > 0) {
-                            // Calculate total size of all ONNX files
-                            const totalSize = onnxFiles.reduce((sum, file) => sum + (file.size || 0), 0);
-                            const sizeMB = totalSize / (1024 * 1024);
-
-                            // Only include models under 500MB
-                            if (sizeMB <= 500 && sizeMB > 0) {
-                                processedModels.push({
-                                    id: model.id,
-                                    name: model.id.replace('onnx-community/', ''),
-                                    sizeMB: sizeMB.toFixed(2),
-                                    sizeBytes: totalSize,
-                                    files: onnxFiles,
-                                    downloads: model.downloads || 0,
-                                    likes: model.likes || 0
-                                });
-                            }
-                        }
-                    } catch (err) {
-                        console.log(`Skipping ${model.id}: ${err.message}`);
-                    }
-                }
-
-                // Sort by popularity (downloads)
-                processedModels.sort((a, b) => b.downloads - a.downloads);
-
-                hfModels = processedModels;
-
-                // Populate dropdown
-                select.innerHTML = '<option value="">Select a model...</option>';
-                hfModels.forEach((model, index) => {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `${model.name} (${model.sizeMB} MB)`;
-                    select.appendChild(option);
-                });
-
-                console.log(`Loaded ${hfModels.length} ONNX models from Hugging Face`);
-            } catch (error) {
-                select.innerHTML = '<option value="">Error loading models</option>';
-                console.error('Error fetching Hugging Face models:', error);
-            }
+            console.log(`Loaded ${validModels.length} ONNX models from Hugging Face`);
         }
 
         // Load selected Hugging Face model
@@ -1703,29 +1678,31 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             const infoDiv = document.getElementById('hfModelInfo');
             const modelIndex = parseInt(select.value);
 
-            if (isNaN(modelIndex) || modelIndex < 0 || modelIndex >= hfModels.length) {
+            // Filter to get valid models (under 500MB)
+            const validModels = hfModels.filter(m => parseFloat(m.sizeMB) <= 500);
+
+            if (isNaN(modelIndex) || modelIndex < 0 || modelIndex >= validModels.length) {
                 infoDiv.textContent = 'Please select a model first';
                 infoDiv.style.color = '#fca5a5';
                 return;
             }
 
-            const model = hfModels[modelIndex];
+            const model = validModels[modelIndex];
 
-            infoDiv.textContent = 'Downloading model from Hugging Face...';
+            infoDiv.textContent = `Downloading ${model.name} (${model.sizeMB} MB)...`;
             infoDiv.style.color = '#a5b4fc';
 
             try {
-                // Download the first .onnx file (or largest one)
-                const fileToDownload = model.files.sort((a, b) => (b.size || 0) - (a.size || 0))[0];
-                const downloadUrl = `https://huggingface.co/${model.id}/resolve/main/${fileToDownload.rfilename}`;
+                // Construct download URL
+                const downloadUrl = `https://huggingface.co/${model.id}/resolve/main/${model.file}`;
 
                 console.log(`Downloading: ${downloadUrl}`);
 
                 const response = await fetch(downloadUrl);
-                if (!response.ok) throw new Error('Failed to download model');
+                if (!response.ok) throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
 
                 const blob = await response.blob();
-                selectedHFModel = new File([blob], fileToDownload.rfilename, { type: 'application/octet-stream' });
+                selectedHFModel = new File([blob], model.file, { type: 'application/octet-stream' });
                 selectedExampleModel = selectedHFModel; // Set as current model
 
                 // Update UI
@@ -1733,7 +1710,7 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                     `Hugging Face: ${model.name} (${model.sizeMB} MB)`;
                 document.getElementById('modelFileInfo').style.color = '#a5b4fc';
 
-                infoDiv.textContent = `✓ Loaded: ${fileToDownload.rfilename}`;
+                infoDiv.textContent = `✓ Loaded: ${model.file} (${model.sizeMB} MB)`;
                 infoDiv.style.color = '#86efac';
 
                 // Clear custom file input
@@ -1752,7 +1729,7 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         // Load default scenario on page load
         window.addEventListener('DOMContentLoaded', () => {
             loadScenario('legit');
-            fetchHuggingFaceModels(); // Load HF models
+            populateHuggingFaceModels(); // Populate HF models dropdown
         });
     </script>
 </body>
