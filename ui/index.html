@@ -202,14 +202,114 @@
         }
 
         .scenario-btn:hover {
-            border-color: rgba(99, 102, 241, 0.5);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(99, 102, 241, 0.8);
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .scenario-btn.active {
             border-color: rgba(99, 102, 241, 0.8);
             background: rgba(99, 102, 241, 0.15);
         }
+
+        .scenario-btn.loading {
+            border-color: rgba(99, 102, 241, 0.8);
+            background: rgba(99, 102, 241, 0.2);
+            pointer-events: none;
+        }
+
+        /* Loading Animation Options - Choose one by uncommenting */
+
+        /* OPTION 1: Shimmer Effect */
+        .scenario-btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* OPTION 2: Pulse Glow (uncomment to use)
+        .scenario-btn.loading {
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 5px rgba(99, 102, 241, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.8);
+            }
+        }
+        */
+
+        /* OPTION 3: Spinning Border (uncomment to use)
+        .scenario-btn.loading::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 4px;
+            background: conic-gradient(
+                rgba(99, 102, 241, 0.8),
+                rgba(99, 102, 241, 0.3),
+                rgba(99, 102, 241, 0.8)
+            );
+            animation: spin 2s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        */
+
+        /* OPTION 4: Progress Bar (uncomment to use)
+        .scenario-btn.loading::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: rgba(99, 102, 241, 1);
+            animation: progress 1.5s ease-out;
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        */
+
+        /* OPTION 5: Breathing Effect (uncomment to use)
+        .scenario-btn.loading {
+            animation: breathe 2s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% {
+                background: rgba(99, 102, 241, 0.2);
+                transform: scale(1);
+            }
+            50% {
+                background: rgba(99, 102, 241, 0.3);
+                transform: scale(1.02);
+            }
+        }
+        */
 
         .scenario-btn .title {
             font-weight: 600;
@@ -1028,12 +1128,13 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         async function loadExampleModel(modelType, event) {
             currentModelType = modelType;
 
-            // Update active state
+            // Add loading state
             const clickedBtn = event && event.target ? event.target.closest('.scenario-btn') : null;
             if (clickedBtn) {
                 document.querySelectorAll('.scenario-btn').forEach(btn => {
-                    btn.classList.remove('active');
+                    btn.classList.remove('active', 'loading');
                 });
+                clickedBtn.classList.add('loading');
             }
 
             try {
@@ -1069,14 +1170,20 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                     loadScenario('legit', null);
                 }
 
-                // Visual feedback for model selection
+                // Visual feedback for model selection - remove loading, add active
                 if (clickedBtn) {
+                    clickedBtn.classList.remove('loading');
                     clickedBtn.classList.add('active');
                 }
 
             } catch (error) {
                 document.getElementById('modelFileInfo').textContent = 'Error loading example model: ' + error.message;
                 document.getElementById('modelFileInfo').style.color = '#fca5a5';
+
+                // Remove loading state on error
+                if (clickedBtn) {
+                    clickedBtn.classList.remove('loading');
+                }
             }
         }
 
