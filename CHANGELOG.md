@@ -76,7 +76,7 @@
 **Implementation** (`server.js:146-278`):
 ```javascript
 async function generateJOLTProof(modelHash, testResults) {
-    const JOLT_BINARY = '/home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof';
+    const JOLT_BINARY = '/path/to/jolt-atlas/target/release/simple_jolt_proof';
 
     // Spawn REAL Rust binary
     const joltProcess = spawn(JOLT_BINARY, [], {
@@ -131,7 +131,7 @@ curl -X POST http://localhost:9100/verify \
 #### Dependencies
 
 **New Requirements**:
-- JOLT-Atlas binary at `/home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof`
+- JOLT-Atlas binary at `/path/to/jolt-atlas/target/release/simple_jolt_proof`
 - Rust toolchain (if building from source)
 
 **Unchanged**:
@@ -151,7 +151,7 @@ curl -X POST http://localhost:9100/verify \
 
 2. **Check binary exists**:
    ```bash
-   ls -lh /home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof
+   ls -lh /path/to/jolt-atlas/target/release/simple_jolt_proof
    # Should show ~52MB executable
    ```
 

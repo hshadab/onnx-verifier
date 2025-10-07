@@ -10,7 +10,7 @@ The system uses the actual JOLT-Atlas Rust binary from a16z crypto:
 
 ```bash
 # Binary location
-ls -lh /home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof
+ls -lh /path/to/jolt-atlas/target/release/simple_jolt_proof
 
 # Expected: 52M executable file
 # This is a REAL Rust binary, not a mock or script
@@ -138,7 +138,7 @@ The proof generation function spawns the JOLT-Atlas binary:
 
 ```javascript
 async function generateJOLTProof(modelHash, testResults) {
-    const JOLT_BINARY = '/home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof';
+    const JOLT_BINARY = '/path/to/jolt-atlas/target/release/simple_jolt_proof';
 
     // Check if binary exists
     if (!require('fs').existsSync(JOLT_BINARY)) {
@@ -174,7 +174,7 @@ let snark: JoltSNARK<Fr, PCS, KeccakTranscript> =
 **Verification steps**:
 1. Clone JOLT-Atlas repo: `git clone https://github.com/ICME-Lab/jolt-atlas`
 2. Review source code at `zkml-jolt-core/src/bin/simple_jolt_proof.rs`
-3. Compare with installed binary: `/home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof`
+3. Compare with installed binary: `/path/to/jolt-atlas/target/release/simple_jolt_proof`
 4. Build from source: `cargo build --release` (takes ~10 minutes)
 5. Compare checksums
 
@@ -201,7 +201,7 @@ To independently verify this is real:
 2. **Build the binary yourself**: `cargo build --release`
 3. **Run it standalone**:
    ```bash
-   /home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof
+   /path/to/jolt-atlas/target/release/simple_jolt_proof
    ```
 4. **Compare timing**: Should take 2-6 seconds, same as our service
 5. **Compare output format**: Console output matches our `rawOutput` field

@@ -11,7 +11,7 @@ Get a **REAL cryptographic proof** of your ONNX model execution in under a minut
 ## Step 1: Start the Service (10 seconds)
 
 ```bash
-cd /home/hshadab/agentkit/zkml-verifier
+cd /path/to/onnx-verifier
 npm install
 node server.js
 ```
@@ -183,10 +183,10 @@ curl -X POST http://localhost:9100/verify-proof \
 ### "JOLT-Atlas binary not found"
 ```bash
 # Check if binary exists
-ls -lh /home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof
+ls -lh /path/to/jolt-atlas/target/release/simple_jolt_proof
 
 # If missing, build from source:
-cd /home/hshadab/agentkit/jolt-atlas
+cd /path/to/jolt-atlas
 cargo build --release
 ```
 

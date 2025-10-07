@@ -269,7 +269,7 @@ console.log(isValid ? "✅ VALID" : "❌ INVALID");
 
 1. **Binary Exists**:
    ```bash
-   ls -lh /home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof
+   ls -lh /path/to/jolt-atlas/target/release/simple_jolt_proof
    # Shows: 52M executable (real Rust binary)
    ```
 
@@ -286,12 +286,12 @@ console.log(isValid ? "✅ VALID" : "❌ INVALID");
 3. **Run Binary Directly**:
    ```bash
    # Bypass the API - run JOLT directly
-   /home/hshadab/agentkit/jolt-atlas/target/release/simple_jolt_proof
+   /path/to/jolt-atlas/target/release/simple_jolt_proof
    # Shows real proof generation + verification
    ```
 
 4. **Check Source Code**:
-   - Review: `/home/hshadab/agentkit/jolt-atlas/zkml-jolt-core/src/bin/simple_jolt_proof.rs`
+   - Review: `/path/to/jolt-atlas/zkml-jolt-core/src/bin/simple_jolt_proof.rs`
    - Verify it calls `JoltSNARK::prove()` and `snark.verify()`
    - Compare with JOLT-Atlas GitHub: https://github.com/ICME-Lab/jolt-atlas
 
@@ -301,7 +301,7 @@ console.log(isValid ? "✅ VALID" : "❌ INVALID");
 
 **Option A**: Build and run the new binaries yourself (requires Rust):
 ```bash
-cd /home/hshadab/agentkit/jolt-atlas/zkml-jolt-core
+cd /path/to/jolt-atlas/zkml-jolt-core
 cargo build --release --bin onnx_prover_with_export
 ./target/release/onnx_prover_with_export
 
