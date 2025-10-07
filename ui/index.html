@@ -1201,9 +1201,6 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                     `Example: ${selectedExampleModel.name} (${(selectedExampleModel.size / 1024).toFixed(2)} KB)`;
                 document.getElementById('modelFileInfo').style.color = '#a5b4fc';
 
-                // Clear custom file input
-                document.getElementById('modelFile').value = '';
-
                 // Load first scenario for this model type (if it exists)
                 if (scenarios[modelType]) {
                     loadScenario('legit', null);
@@ -1238,22 +1235,9 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             }
         }
 
-        document.getElementById('modelFile').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                document.getElementById('modelFileInfo').textContent =
-                    `${file.name} (${sizeMB} MB)`;
-                document.getElementById('modelFileInfo').style.color = '#94a3b8';
-                selectedExampleModel = null; // Clear example model when custom file selected
-            } else {
-                document.getElementById('modelFileInfo').textContent = 'No file selected';
-            }
-        });
-
         async function verifyModel() {
-            // Use example model if selected, otherwise use uploaded file
-            const modelFile = selectedExampleModel || document.getElementById('modelFile').files[0];
+            // Use example model or Hugging Face model if selected
+            const modelFile = selectedExampleModel;
             const testInputsText = document.getElementById('testInputs').value;
             const errorDiv = document.getElementById('errorMessage');
             const resultsContainer = document.getElementById('resultsContainer');
@@ -2048,9 +2032,6 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 infoDiv.textContent = `✓ Loaded: ${model.file} (${model.sizeMB} MB)`;
                 infoDiv.style.color = '#86efac';
 
-                // Clear custom file input
-                document.getElementById('modelFile').value = '';
-
                 // Clear test inputs for HF models (user needs to provide)
                 document.getElementById('testInputs').value = '';
 
@@ -2139,9 +2120,6 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
 
                 infoDiv.textContent = `✓ Loaded: ${targetFile.rfilename} (${actualSizeMB} MB)`;
                 infoDiv.style.color = '#86efac';
-
-                // Clear custom file input
-                document.getElementById('modelFile').value = '';
 
                 // Clear test inputs for custom HF models (user needs to provide)
                 document.getElementById('testInputs').value = '';
