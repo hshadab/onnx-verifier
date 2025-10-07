@@ -515,8 +515,9 @@
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('prove')">Prove and Verify</button>
-            <button class="tab-btn" onclick="switchTab('verify')">Verify Existing Proof</button>
+            <button class="tab-btn active" onclick="switchTab('examples')">Examples</button>
+            <button class="tab-btn" onclick="switchTab('upload')">Upload</button>
+            <button class="tab-btn" onclick="switchTab('verify')">Verify Only</button>
             <button class="tab-btn" onclick="switchTab('docs')">Docs</button>
         </div>
     </div>
@@ -530,20 +531,10 @@
                 Upload an ONNX model, generate a proof, verify instantly in any browser · For API transparency, regulatory compliance, safety research, and verifiable AI testing.</div>
         </div>
 
-        <!-- Prove Tab (Default) -->
-        <div id="prove-tab" class="tab-content active">
+        <!-- Examples Tab (Default) -->
+        <div id="examples-tab" class="tab-content active">
             <div class="card">
-                <h2>Upload your own ONNX file or select an example model to generate a zkML proof and verification.</h2>
-
-                <div class="form-group">
-                    <label for="modelFile">Upload Custom ONNX Model (max 500MB)</label>
-                    <input type="file" id="modelFile" accept=".onnx">
-                    <div class="file-info" id="modelFileInfo">No file selected</div>
-                </div>
-
-                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin: 15px 0;">
-                    — OR —
-                </div>
+                <h2>Select an example model or import from Hugging Face</h2>
 
                 <div class="form-group">
                     <label>Select Example Model</label>
@@ -616,14 +607,49 @@
                 <div id="errorMessage"></div>
             </div>
 
-        <div id="resultsContainer" style="display: none;">
-            <div class="results">
-                <h2>Proof Results</h2>
-                <div id="resultsContent"></div>
+            <div id="resultsContainer" style="display: none;">
+                <div class="results">
+                    <h2>Proof Results</h2>
+                    <div id="resultsContent"></div>
+                </div>
             </div>
         </div>
+        <!-- End Examples Tab -->
+
+        <!-- Upload Tab -->
+        <div id="upload-tab" class="tab-content">
+            <div class="card">
+                <h2>Upload your own ONNX model</h2>
+
+                <div class="form-group">
+                    <label for="modelFileUpload">Upload Custom ONNX Model (max 500MB)</label>
+                    <input type="file" id="modelFileUpload" accept=".onnx">
+                    <div class="file-info" id="modelFileUploadInfo">No file selected</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="testInputsUpload">Test Inputs (JSON array of arrays)</label>
+                    <textarea id="testInputsUpload" placeholder='[[50.0, 0.2, 500.0, 3.0, 14.0]]'></textarea>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                        Provide test inputs as a JSON array of arrays.
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="verifyBtnUpload" onclick="verifyUploadedModel()">
+                    Generate and Verify zkML Proof
+                </button>
+
+                <div id="errorMessageUpload"></div>
+            </div>
+
+            <div id="resultsContainerUpload" style="display: none;">
+                <div class="results">
+                    <h2>Proof Results</h2>
+                    <div id="resultsContentUpload"></div>
+                </div>
+            </div>
         </div>
-        <!-- End Prove Tab -->
+        <!-- End Upload Tab -->
 
         <!-- Verify Tab -->
         <div id="verify-tab" class="tab-content">
@@ -1247,6 +1273,86 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             }
         }
 
+        // Handle upload tab verification
+        async function verifyUploadedModel() {
+            const modelFile = document.getElementById('modelFileUpload').files[0];
+            const testInputsText = document.getElementById('testInputsUpload').value;
+            const errorDiv = document.getElementById('errorMessageUpload');
+            const resultsContainer = document.getElementById('resultsContainerUpload');
+            const resultsContent = document.getElementById('resultsContentUpload');
+            const verifyBtn = document.getElementById('verifyBtnUpload');
+
+            // Clear previous results/errors
+            errorDiv.innerHTML = '';
+            resultsContainer.style.display = 'none';
+
+            // Validation
+            if (!modelFile) {
+                errorDiv.innerHTML = '<div class="error">Please upload an ONNX model file</div>';
+                return;
+            }
+
+            let testInputs;
+            try {
+                testInputs = JSON.parse(testInputsText);
+                if (!Array.isArray(testInputs) || testInputs.length === 0) {
+                    throw new Error('Must be a non-empty array');
+                }
+            } catch (e) {
+                errorDiv.innerHTML = '<div class="error">Invalid test inputs JSON: ' + e.message + '</div>';
+                return;
+            }
+
+            // Show loading
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Generating Proof...';
+            resultsContainer.style.display = 'block';
+            resultsContent.innerHTML = '<div class="loading"><div class="spinner"></div>Running ONNX inference and generating JOLT-Atlas proof...<br><small>This may take a few seconds</small></div>';
+
+            try {
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('model', modelFile);
+                formData.append('testInputs', JSON.stringify(testInputs));
+
+                // Call API
+                const response = await fetch(`${API_URL}/verify`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || result.error) {
+                    throw new Error(result.error || 'Verification failed');
+                }
+
+                displayResultsUpload(result);
+            } catch (error) {
+                resultsContent.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Generate and Verify zkML Proof';
+            }
+        }
+
+        // Handle file upload input change
+        document.getElementById('modelFileUpload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const infoDiv = document.getElementById('modelFileUploadInfo');
+
+            if (file) {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                const size = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+                infoDiv.textContent = `Selected: ${file.name} (${size})`;
+                infoDiv.style.color = '#a5b4fc';
+            } else {
+                infoDiv.textContent = 'No file selected';
+                infoDiv.style.color = '#94a3b8';
+            }
+        });
+
         // Helper to truncate long arrays for display
         function formatArray(arr, maxElements = 5) {
             if (arr.length <= maxElements) {
@@ -1356,6 +1462,130 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
 
             // Automatically run WASM verification
             autoVerifyWithWasm(result);
+        }
+
+        // Display results for upload tab
+        function displayResultsUpload(result) {
+            // Show max 2 test cases initially, rest collapsed
+            const maxVisible = 2;
+            const visibleTests = result.testResults.slice(0, maxVisible);
+            const hiddenTests = result.testResults.slice(maxVisible);
+            const hasHidden = hiddenTests.length > 0;
+
+            const html = `
+                <div class="result-item">
+                    <div class="label">Proof ID</div>
+                    <div class="value">${result.verificationId}</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Model Hash (SHA-256)</div>
+                    <div class="value">${result.modelHash}</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Proof Hash</div>
+                    <div class="value">${result.proofHash}</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Proof System</div>
+                    <div class="value">${result.proofSystem}</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Test Cases Passed</div>
+                    <div class="value">${result.testCasesPassed}</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Model Size</div>
+                    <div class="value">${result.modelSizeMB} MB</div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Performance</div>
+                    <div class="value">
+                        Avg Inference: ${result.performance.inferenceTimeMs}ms<br>
+                        Proof Generation: ${result.performance.proofGenerationMs}ms<br>
+                        Total: ${result.performance.totalTimeMs}ms
+                    </div>
+                </div>
+
+                <div class="result-item">
+                    <div class="label">Proof Generated At</div>
+                    <div class="value">${new Date(result.verifiedAt).toLocaleString()}</div>
+                </div>
+
+                <div class="test-results">
+                    <h3 style="margin-bottom: 15px; color: #e2e8f0;">Test Case Results: (${result.testCasesPassed} total)</h3>
+                    <div id="visibleTestsUpload">
+                        ${visibleTests.map(test => `
+                            <div class="test-case">
+                                <div class="test-case-header">Test Case #${test.testCase} (${test.inferenceTimeMs}ms)</div>
+                                <div class="test-io">
+                                    <div>
+                                        <div class="label">Input:</div>
+                                        <div class="data">[${formatArray(test.input)}]</div>
+                                    </div>
+                                    <div>
+                                        <div class="label">Output:</div>
+                                        <div class="data">[${formatArray(test.output)}]</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div id="hiddenTestsUpload" style="display: none;">
+                        ${hiddenTests.map(test => `
+                            <div class="test-case">
+                                <div class="test-case-header">Test Case #${test.testCase} (${test.inferenceTimeMs}ms)</div>
+                                <div class="test-io">
+                                    <div>
+                                        <div class="label">Input:</div>
+                                        <div class="data">[${formatArray(test.input)}]</div>
+                                    </div>
+                                    <div>
+                                        <div class="label">Output:</div>
+                                        <div class="data">[${formatArray(test.output)}]</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${hasHidden ? `
+                        <button onclick="toggleTestResultsUpload()" id="toggleTestsBtnUpload" style="margin-top: 10px; padding: 8px 16px; background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; cursor: pointer; font-size: 13px;">
+                            Show ${hiddenTests.length} more test case${hiddenTests.length > 1 ? 's' : ''} ▼
+                        </button>
+                    ` : ''}
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: rgba(99, 102, 241, 0.1); border-radius: 4px; border-left: 4px solid rgba(99, 102, 241, 0.8);">
+                    <button onclick="downloadProof('${result.verificationId}')" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                        📥 Download Proof File
+                    </button>
+                    <div style="margin-top: 10px; font-size: 13px; color: #cbd5e1;">
+                        Download the proof file to verify it independently using the "Verify Only" tab
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resultsContentUpload').innerHTML = html;
+        }
+
+        // Toggle test results for upload tab
+        function toggleTestResultsUpload() {
+            const hiddenTests = document.getElementById('hiddenTestsUpload');
+            const toggleBtn = document.getElementById('toggleTestsBtnUpload');
+            const isHidden = hiddenTests.style.display === 'none';
+
+            if (isHidden) {
+                hiddenTests.style.display = 'block';
+                toggleBtn.textContent = toggleBtn.textContent.replace('Show', 'Hide').replace('▼', '▲');
+            } else {
+                hiddenTests.style.display = 'none';
+                toggleBtn.textContent = toggleBtn.textContent.replace('Hide', 'Show').replace('▲', '▼');
+            }
         }
 
         // Toggle test results expand/collapse
