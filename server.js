@@ -5,6 +5,7 @@
  * No marketplace, no registry - just verification
  */
 
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -13,6 +14,7 @@ const onnx = require('onnxruntime-node');
 const fs = require('fs').promises;
 const path = require('path');
 const snarkjs = require('snarkjs');
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 9100;
@@ -595,6 +597,54 @@ app.get('/health', (req, res) => {
         verificationsCount: verifications.size,
         uptime: process.uptime()
     });
+});
+
+// HuggingFace Model Proxy Endpoint (with authentication)
+app.get('/download-hf-model', async (req, res) => {
+    const { modelId, fileName } = req.query;
+
+    if (!modelId || !fileName) {
+        return res.status(400).json({ error: 'Missing modelId or fileName' });
+    }
+
+    try {
+        const url = `https://huggingface.co/${modelId}/resolve/main/${fileName}`;
+        console.log(`[HF Proxy] Downloading: ${url}`);
+
+        const headers = {};
+        if (process.env.HF_TOKEN) {
+            headers['Authorization'] = `Bearer ${process.env.HF_TOKEN}`;
+        }
+
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+            console.error(`[HF Proxy] Failed to download: ${response.status} ${response.statusText}`);
+            return res.status(response.status).json({
+                error: `Failed to download model: ${response.statusText}`
+            });
+        }
+
+        // Get content type and size
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+        const contentLength = response.headers.get('content-length');
+
+        // Set response headers
+        res.setHeader('Content-Type', contentType);
+        if (contentLength) {
+            res.setHeader('Content-Length', contentLength);
+        }
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+        // Stream the response
+        response.body.pipe(res);
+
+        console.log(`[HF Proxy] Successfully proxied ${fileName} (${contentLength} bytes)`);
+
+    } catch (error) {
+        console.error('[HF Proxy] Error:', error);
+        res.status(500).json({ error: 'Failed to download model', details: error.message });
+    }
 });
 
 // Start server
