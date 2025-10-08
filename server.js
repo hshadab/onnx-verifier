@@ -34,13 +34,8 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 
-// Redirect root to UI
-app.get('/', (req, res) => {
-    res.redirect('/ui/');
-});
-
-// Serve UI files
-app.use('/ui', express.static('ui'));
+// Serve static files (UI and models) from root
+app.use(express.static('.'));
 app.use('/models', express.static('models'));
 
 // Error handler for multer file size errors
