@@ -31,6 +31,10 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 
+// Serve UI files
+app.use('/ui', express.static('ui'));
+app.use('/models', express.static('models'));
+
 // Error handler for multer file size errors
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
