@@ -9,4 +9,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: HF_TOKEN
+        sync: false
     healthCheckPath: /health
