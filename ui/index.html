@@ -544,6 +544,7 @@
                     <div class="model-loading-bar" id="modelLoadingBar">
                         <div class="model-loading-bar-progress"></div>
                     </div>
+                    <div class="file-info" id="modelFileInfo" style="margin-bottom: 10px;"></div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                         <button class="scenario-btn" onclick="loadExampleModel('authorization', event)">
                             <div class="title">🔒 Authorization</div>
@@ -1212,11 +1213,16 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 }
 
             } catch (error) {
-                document.getElementById('modelFileInfo').textContent = 'Error loading example model: ' + error.message;
-                document.getElementById('modelFileInfo').style.color = '#fca5a5';
+                const modelFileInfo = document.getElementById('modelFileInfo');
+                if (modelFileInfo) {
+                    modelFileInfo.textContent = 'Error loading example model: ' + error.message;
+                    modelFileInfo.style.color = '#fca5a5';
+                }
             } finally {
                 // Hide progress bar
-                progressBar.classList.remove('active');
+                if (progressBar) {
+                    progressBar.classList.remove('active');
+                }
             }
         }
 
@@ -1922,24 +1928,18 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             { id: 'onnx-community/segformer-b0-finetuned-ade-512-512', name: 'SegFormer B0', file: 'model.onnx', sizeMB: '14.3' },
 
             // NLP Models - BERT Family
-            { id: 'onnx-community/bert-base-uncased', name: 'BERT Base Uncased', file: 'model.onnx', sizeMB: '420' },
-            { id: 'onnx-community/bert-base-cased', name: 'BERT Base Cased', file: 'model.onnx', sizeMB: '420' },
-            { id: 'onnx-community/bert-large-uncased', name: 'BERT Large Uncased', file: 'model.onnx', sizeMB: '1267' },
             { id: 'onnx-community/distilbert-base-uncased', name: 'DistilBERT Base Uncased', file: 'model.onnx', sizeMB: '255' },
             { id: 'onnx-community/distilbert-base-cased', name: 'DistilBERT Base Cased', file: 'model.onnx', sizeMB: '255' },
             { id: 'onnx-community/tinybert-6l-768d', name: 'TinyBERT 6L-768D', file: 'model.onnx', sizeMB: '255' },
             { id: 'onnx-community/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'model.onnx', sizeMB: '196' },
 
             // NLP Models - RoBERTa Family
-            { id: 'onnx-community/roberta-base', name: 'RoBERTa Base', file: 'model.onnx', sizeMB: '476' },
             { id: 'onnx-community/distilroberta-base', name: 'DistilRoBERTa Base', file: 'model.onnx', sizeMB: '308' },
-            { id: 'onnx-community/xlm-roberta-base', name: 'XLM-RoBERTa Base', file: 'model.onnx', sizeMB: '1070' },
 
             // NLP Models - Other Transformers
             { id: 'onnx-community/albert-base-v2', name: 'ALBERT Base V2', file: 'model.onnx', sizeMB: '45' },
             { id: 'onnx-community/electra-small-discriminator', name: 'ELECTRA Small', file: 'model.onnx', sizeMB: '52' },
             { id: 'onnx-community/deberta-v3-small', name: 'DeBERTa V3 Small', file: 'model.onnx', sizeMB: '179' },
-            { id: 'onnx-community/mpnet-base', name: 'MPNet Base', file: 'model.onnx', sizeMB: '420' },
 
             // NLP Models - Sentence Transformers
             { id: 'onnx-community/all-MiniLM-L6-v2', name: 'all-MiniLM-L6-v2', file: 'model.onnx', sizeMB: '90' },
@@ -1962,7 +1962,6 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
 
             // Audio Models - Other
             { id: 'onnx-community/wav2vec2-base', name: 'Wav2Vec2 Base', file: 'model.onnx', sizeMB: '360' },
-            { id: 'onnx-community/hubert-base', name: 'HuBERT Base', file: 'model.onnx', sizeMB: '360' },
 
             // Multimodal Models
             { id: 'onnx-community/clip-vit-base-patch32', name: 'CLIP ViT Base Patch32', file: 'vision_model.onnx', sizeMB: '338' },
