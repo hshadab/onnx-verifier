@@ -1968,12 +1968,12 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             infoDiv.style.color = '#a5b4fc';
 
             try {
-                // Use server proxy endpoint for authenticated downloads
-                const proxyUrl = `/download-hf-model?modelId=${encodeURIComponent(model.id)}&fileName=${encodeURIComponent(model.file)}`;
+                // Download directly from HuggingFace (these models are publicly accessible)
+                const directUrl = `https://huggingface.co/${model.id}/resolve/main/${model.file}`;
 
-                console.log(`Downloading via proxy: ${model.id}/${model.file}`);
+                console.log(`Downloading from HuggingFace: ${directUrl}`);
 
-                const response = await fetch(proxyUrl);
+                const response = await fetch(directUrl);
                 if (!response.ok) throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
 
                 const blob = await response.blob();
@@ -2050,11 +2050,11 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 infoDiv.textContent = `Downloading ${targetFile.rfilename} (${fileSizeMB} MB)...`;
                 infoDiv.style.color = '#a5b4fc';
 
-                // Download the model via proxy endpoint
-                const proxyUrl = `/download-hf-model?modelId=${encodeURIComponent(modelId)}&fileName=${encodeURIComponent(targetFile.rfilename)}`;
-                console.log(`Downloading custom model via proxy: ${modelId}/${targetFile.rfilename}`);
+                // Download directly from HuggingFace (public models)
+                const directUrl = `https://huggingface.co/${modelId}/resolve/main/${targetFile.rfilename}`;
+                console.log(`Downloading custom model from HuggingFace: ${directUrl}`);
 
-                const response = await fetch(proxyUrl);
+                const response = await fetch(directUrl);
                 if (!response.ok) throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
 
                 const blob = await response.blob();
