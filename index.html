@@ -515,7 +515,8 @@
 
         <!-- Tab Navigation -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('examples')">Examples</button>
+            <button class="tab-btn active" onclick="switchTab('examples')">Example Models</button>
+            <button class="tab-btn" onclick="switchTab('huggingface')">HuggingFace Models</button>
             <button class="tab-btn" onclick="switchTab('upload')">Upload</button>
             <button class="tab-btn" onclick="switchTab('verify')">Verify Only</button>
             <button class="tab-btn" onclick="switchTab('docs')">Docs</button>
@@ -534,7 +535,7 @@
         <!-- Examples Tab (Default) -->
         <div id="examples-tab" class="tab-content active">
             <div class="card">
-                <h2>Select an example model or import from Hugging Face</h2>
+                <h2>Select an example model</h2>
 
                 <div class="form-group">
                     <label>Select Example Model</label>
@@ -573,48 +574,6 @@
                     </div>
                 </div>
 
-                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin: 15px 0;">
-                    — OR —
-                </div>
-
-                <div class="form-group">
-                    <label for="hfModelSelect">Import from Hugging Face 🤗</label>
-                    <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 10px 0;">
-                        Select a model from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a> (max 500MB)
-                    </p>
-                    <div style="display: flex; gap: 10px; align-items: flex-start;">
-                        <select id="hfModelSelect" style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0; cursor: pointer;">
-                            <option value="">Loading models...</option>
-                        </select>
-                        <button onclick="loadHuggingFaceModel()" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
-                            Load Model
-                        </button>
-                    </div>
-                    <div class="file-info" id="hfModelInfo" style="margin-top: 8px;"></div>
-
-                    <div style="text-align: center; color: #64748b; font-size: 12px; margin: 15px 0 10px 0;">
-                        — OR —
-                    </div>
-
-                    <div style="margin-top: 10px;">
-                        <label style="font-size: 13px; color: #94a3b8; margin-bottom: 8px; display: block;">Custom Model ID (for advanced users)</label>
-                        <div style="display: flex; gap: 10px; align-items: flex-start;">
-                            <input
-                                type="text"
-                                id="customHfModelId"
-                                placeholder="e.g., Xenova/bert-base-uncased"
-                                style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0;"
-                            />
-                            <button onclick="loadCustomHuggingFaceModel()" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
-                                Load
-                            </button>
-                        </div>
-                        <div class="file-info" id="customHfModelInfo" style="margin-top: 8px; font-size: 12px;">
-                            Enter any model ID from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="form-group">
                     <label for="testInputs">Test Inputs (JSON array of arrays)</label>
                     <textarea id="testInputs" placeholder='[[50.0, 0.2, 500.0, 3.0, 14.0]]'></textarea>
@@ -638,6 +597,74 @@
             </div>
         </div>
         <!-- End Examples Tab -->
+
+        <!-- HuggingFace Tab -->
+        <div id="huggingface-tab" class="tab-content">
+            <div class="card">
+                <h2>Import from Hugging Face 🤗</h2>
+
+                <div class="form-group">
+                    <label for="hfModelSelect">Select from onnx-community</label>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 10px 0;">
+                        Select a model from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a> (max 500MB)
+                    </p>
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <select id="hfModelSelect" style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0; cursor: pointer;">
+                            <option value="">Loading models...</option>
+                        </select>
+                        <button onclick="loadHuggingFaceModel()" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                            Load Model
+                        </button>
+                    </div>
+                    <div class="file-info" id="hfModelInfo" style="margin-top: 8px;"></div>
+                </div>
+
+                <div style="text-align: center; color: #94a3b8; font-size: 13px; margin: 15px 0;">
+                    — OR —
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 14px; color: #e2e8f0; margin-bottom: 8px; display: block;">Custom Model ID (for advanced users)</label>
+                    <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 10px 0;">
+                        Enter any model ID from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a>
+                    </p>
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <input
+                            type="text"
+                            id="customHfModelId"
+                            placeholder="e.g., Xenova/bert-base-uncased"
+                            style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0;"
+                        />
+                        <button onclick="loadCustomHuggingFaceModel()" class="btn-primary" style="width: auto; padding: 12px 20px; margin: 0;">
+                            Load
+                        </button>
+                    </div>
+                    <div class="file-info" id="customHfModelInfo" style="margin-top: 8px;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="testInputs">Test Inputs (JSON array of arrays)</label>
+                    <textarea id="testInputs" placeholder='[[50.0, 0.2, 500.0, 3.0, 14.0]]'></textarea>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                        Provide test inputs as a JSON array of arrays for your model.
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="verifyBtn" onclick="verifyModel()">
+                    Generate and Verify zkML Proof
+                </button>
+
+                <div id="errorMessage"></div>
+            </div>
+
+            <div id="resultsContainer" style="display: none;">
+                <div class="results">
+                    <h2>Proof Results</h2>
+                    <div id="resultsContent"></div>
+                </div>
+            </div>
+        </div>
+        <!-- End HuggingFace Tab -->
 
         <!-- Upload Tab -->
         <div id="upload-tab" class="tab-content">
@@ -923,9 +950,10 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             // Show selected tab
             document.getElementById(tabName + '-tab').classList.add('active');
 
-            // Activate clicked button (find by tab name)
+            // Activate clicked button (find by onclick attribute)
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                if (btn.textContent.toLowerCase() === tabName.toLowerCase()) {
+                const onclickAttr = btn.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes(`'${tabName}'`)) {
                     btn.classList.add('active');
                 }
             });
