@@ -19,6 +19,9 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 9100;
 
+// Debug: Check if HF_TOKEN is available at startup
+console.log('[Startup] HF_TOKEN available:', process.env.HF_TOKEN ? 'YES' : 'NO');
+
 // Deployment mode: set to 'true' to disable JOLT proof generation
 const INFERENCE_ONLY_MODE = process.env.INFERENCE_ONLY_MODE === 'true';
 
