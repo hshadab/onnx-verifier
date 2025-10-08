@@ -1899,81 +1899,34 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         // Hugging Face model management
         let selectedHFModel = null;
 
-        // Curated list of popular ONNX models from Xenova (ONNX.js converted models)
+        // Curated list of popular ONNX models from onnx-community
         // These are publicly accessible without authentication
         const hfModels = [
-            // Vision Models - Classification
-            { id: 'Xenova/resnet-50', name: 'ResNet-50', file: 'onnx/model.onnx', sizeMB: '97.8' },
-            { id: 'Xenova/resnet-18', name: 'ResNet-18', file: 'onnx/model.onnx', sizeMB: '44.7' },
-            { id: 'Xenova/vit-base-patch16-224', name: 'ViT Base Patch16-224', file: 'onnx/model.onnx', sizeMB: '343' },
-            { id: 'Xenova/vit-base-patch32-224', name: 'ViT Base Patch32-224', file: 'onnx/model.onnx', sizeMB: '343' },
-            { id: 'Xenova/mobilenet-v2', name: 'MobileNet V2', file: 'onnx/model.onnx', sizeMB: '13.6' },
-            { id: 'Xenova/mobilenet-v3-small', name: 'MobileNet V3 Small', file: 'onnx/model.onnx', sizeMB: '8.9' },
-            { id: 'Xenova/mobilenet-v3-large', name: 'MobileNet V3 Large', file: 'onnx/model.onnx', sizeMB: '21.4' },
-            { id: 'Xenova/efficientnet-b0', name: 'EfficientNet B0', file: 'onnx/model.onnx', sizeMB: '20' },
-            { id: 'Xenova/efficientnet-b1', name: 'EfficientNet B1', file: 'onnx/model.onnx', sizeMB: '30' },
-            { id: 'Xenova/efficientnet-b2', name: 'EfficientNet B2', file: 'onnx/model.onnx', sizeMB: '36' },
-            { id: 'Xenova/convnext-tiny-224', name: 'ConvNeXt Tiny', file: 'onnx/model.onnx', sizeMB: '109' },
-            { id: 'Xenova/convnext-small-224', name: 'ConvNeXt Small', file: 'onnx/model.onnx', sizeMB: '193' },
-            { id: 'Xenova/densenet-121', name: 'DenseNet-121', file: 'onnx/model.onnx', sizeMB: '30.8' },
-            { id: 'Xenova/squeezenet1.1', name: 'SqueezeNet 1.1', file: 'onnx/model.onnx', sizeMB: '4.7' },
-            { id: 'Xenova/shufflenet-v2-x1-0', name: 'ShuffleNet V2 x1.0', file: 'onnx/model.onnx', sizeMB: '8.8' },
-            { id: 'Xenova/regnet-y-400mf', name: 'RegNet Y-400MF', file: 'onnx/model.onnx', sizeMB: '16.3' },
-
-            // Vision Models - Object Detection
-            { id: 'Xenova/yolos-tiny', name: 'YOLOS Tiny', file: 'onnx/model.onnx', sizeMB: '19' },
-            { id: 'Xenova/yolos-small', name: 'YOLOS Small', file: 'onnx/model.onnx', sizeMB: '86' },
-            { id: 'Xenova/detr-resnet-50', name: 'DETR ResNet-50', file: 'onnx/model.onnx', sizeMB: '159' },
-
-            // Vision Models - Segmentation
-            { id: 'Xenova/segformer-b0-finetuned-ade-512-512', name: 'SegFormer B0', file: 'onnx/model.onnx', sizeMB: '14.3' },
-
-            // NLP Models - BERT Family
-            { id: 'Xenova/bert-base-uncased', name: 'BERT Base Uncased', file: 'onnx/model.onnx', sizeMB: '420' },
-            { id: 'Xenova/bert-base-cased', name: 'BERT Base Cased', file: 'onnx/model.onnx', sizeMB: '420' },
-            { id: 'Xenova/distilbert-base-uncased', name: 'DistilBERT Base Uncased', file: 'onnx/model.onnx', sizeMB: '255' },
-            { id: 'Xenova/distilbert-base-cased', name: 'DistilBERT Base Cased', file: 'onnx/model.onnx', sizeMB: '255' },
-            { id: 'Xenova/tinybert-6l-768d', name: 'TinyBERT 6L-768D', file: 'onnx/model.onnx', sizeMB: '255' },
-            { id: 'Xenova/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'onnx/model.onnx', sizeMB: '196' },
-
-            // NLP Models - RoBERTa Family
-            { id: 'Xenova/roberta-base', name: 'RoBERTa Base', file: 'onnx/model.onnx', sizeMB: '476' },
-            { id: 'Xenova/distilroberta-base', name: 'DistilRoBERTa Base', file: 'onnx/model.onnx', sizeMB: '308' },
-            { id: 'Xenova/xlm-roberta-base', name: 'XLM-RoBERTa Base', file: 'onnx/model.onnx', sizeMB: '1070' },
-
-            // NLP Models - Other Transformers
-            { id: 'Xenova/albert-base-v2', name: 'ALBERT Base V2', file: 'onnx/model.onnx', sizeMB: '45' },
-            { id: 'Xenova/electra-small-discriminator', name: 'ELECTRA Small', file: 'onnx/model.onnx', sizeMB: '52' },
-            { id: 'Xenova/deberta-v3-small', name: 'DeBERTa V3 Small', file: 'onnx/model.onnx', sizeMB: '179' },
-            { id: 'Xenova/mpnet-base', name: 'MPNet Base', file: 'onnx/model.onnx', sizeMB: '420' },
-
-            // NLP Models - Sentence Transformers
-            { id: 'Xenova/all-MiniLM-L6-v2', name: 'all-MiniLM-L6-v2', file: 'onnx/model.onnx', sizeMB: '90' },
-            { id: 'Xenova/all-MiniLM-L12-v2', name: 'all-MiniLM-L12-v2', file: 'onnx/model.onnx', sizeMB: '130' },
-            { id: 'Xenova/paraphrase-MiniLM-L6-v2', name: 'paraphrase-MiniLM-L6-v2', file: 'onnx/model.onnx', sizeMB: '90' },
-
-            // Generative Models
-            { id: 'Xenova/gpt2', name: 'GPT-2', file: 'decoder_model.onnx', sizeMB: '487' },
-            { id: 'Xenova/distilgpt2', name: 'DistilGPT-2', file: 'decoder_model.onnx', sizeMB: '319' },
-            { id: 'Xenova/t5-small', name: 'T5 Small', file: 'encoder_model.onnx', sizeMB: '242' },
-            { id: 'Xenova/flan-t5-small', name: 'FLAN-T5 Small', file: 'encoder_model.onnx', sizeMB: '308' },
-
             // Audio Models - Whisper
-            { id: 'Xenova/whisper-tiny', name: 'Whisper Tiny', file: 'decoder_model.onnx', sizeMB: '77' },
-            { id: 'Xenova/whisper-base', name: 'Whisper Base', file: 'decoder_model.onnx', sizeMB: '145' },
-            { id: 'Xenova/whisper-small', name: 'Whisper Small', file: 'decoder_model.onnx', sizeMB: '483' },
+            { id: 'onnx-community/whisper-large-v3-turbo', name: 'Whisper Large V3 Turbo', file: 'onnx/decoder_model.onnx', sizeMB: '307' },
 
-            // Audio Models - Other
-            { id: 'Xenova/wav2vec2-base', name: 'Wav2Vec2 Base', file: 'onnx/model.onnx', sizeMB: '360' },
-            { id: 'Xenova/hubert-base', name: 'HuBERT Base', file: 'onnx/model.onnx', sizeMB: '360' },
+            // Vision Models
+            { id: 'onnx-community/depth-anything-v2-small', name: 'Depth Anything V2 Small', file: 'onnx/model.onnx', sizeMB: '98' },
+            { id: 'onnx-community/ormbg-ONNX', name: 'ORMBG Background Removal', file: 'onnx/model.onnx', sizeMB: '42' },
+
+            // Audio Segmentation
+            { id: 'onnx-community/pyannote-segmentation-3.0', name: 'Pyannote Segmentation 3.0', file: 'onnx/model.onnx', sizeMB: '5.6' },
 
             // Multimodal Models
-            { id: 'Xenova/clip-vit-base-patch32', name: 'CLIP ViT Base Patch32', file: 'vision_model.onnx', sizeMB: '338' },
-            { id: 'Xenova/clip-vit-base-patch16', name: 'CLIP ViT Base Patch16', file: 'vision_model.onnx', sizeMB: '343' },
+            { id: 'onnx-community/FastVLM-0.5B-ONNX', name: 'FastVLM 0.5B', file: 'onnx/decoder_model_merged.onnx', sizeMB: '492' },
 
-            // Specialized Models
-            { id: 'Xenova/layoutlm-base-uncased', name: 'LayoutLM Base', file: 'onnx/model.onnx', sizeMB: '420' },
-            { id: 'Xenova/table-transformer-detection', name: 'Table Transformer Detection', file: 'onnx/model.onnx', sizeMB: '108' }
+            // Conversational Models
+            { id: 'onnx-community/chatterbox-ONNX', name: 'Chatterbox', file: 'onnx/conditional_decoder.onnx', sizeMB: '135' },
+
+            // Language Models
+            { id: 'onnx-community/Qwen3-0.6B-ONNX', name: 'Qwen3 0.6B', file: 'onnx/model.onnx', sizeMB: '293' },
+            { id: 'onnx-community/granite-4.0-micro-ONNX-web', name: 'Granite 4.0 Micro', file: 'onnx/model_q4f16.onnx', sizeMB: '239' },
+
+            // Text-to-Speech
+            { id: 'onnx-community/Kokoro-82M-v1.0-ONNX', name: 'Kokoro 82M TTS v1.0', file: 'onnx/model.onnx', sizeMB: '329' },
+
+            // Embedding Models
+            { id: 'onnx-community/embeddinggemma-300m-ONNX', name: 'Embedding Gemma 300M', file: 'onnx/model.onnx', sizeMB: '166' }
         ];
 
         // Populate Hugging Face model dropdown
