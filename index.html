@@ -856,7 +856,7 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
 
     <script type="module">
         // Import WASM verifier for client-side proof verification
-        import init, { WasmVerifier, hash_data, get_timestamp } from './pkg/zkml_wasm_verifier.js';
+        import init, { WasmVerifier, hash_data, get_timestamp } from './zkml_wasm_verifier.js';
 
         let wasmVerifier = null;
         let wasmLoaded = false;
@@ -1988,8 +1988,8 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 infoDiv.textContent = `✓ Loaded: ${model.file} (${model.sizeMB} MB)`;
                 infoDiv.style.color = '#86efac';
 
-                // Clear test inputs for HF models (user needs to provide)
-                document.getElementById('testInputs').value = '';
+                // Set placeholder test inputs for HF models (user should customize)
+                document.getElementById('testInputs').value = '[[1.0]]';
 
             } catch (error) {
                 infoDiv.textContent = 'Error downloading model: ' + error.message;
@@ -2077,8 +2077,8 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 infoDiv.textContent = `✓ Loaded: ${targetFile.rfilename} (${actualSizeMB} MB)`;
                 infoDiv.style.color = '#86efac';
 
-                // Clear test inputs for custom HF models (user needs to provide)
-                document.getElementById('testInputs').value = '';
+                // Set placeholder test inputs for custom HF models (user should customize)
+                document.getElementById('testInputs').value = '[[1.0]]';
 
                 // Clear the dropdown selection
                 document.getElementById('hfModelSelect').value = '';
