@@ -1,7 +1,7 @@
 services:
-  # Main zkML Verifier Backend (API)
+  # zkML ONNX Verifier (Single Service - API + UI)
   - type: web
-    name: onnx-verifier-api
+    name: onnx-verifier
     env: node
     plan: starter
     buildCommand: npm install
@@ -10,16 +10,3 @@ services:
       - key: NODE_ENV
         value: production
     healthCheckPath: /health
-
-  # UI Frontend (Static + Server)
-  - type: web
-    name: onnx-verifier-ui
-    env: node
-    plan: starter
-    rootDir: ui
-    buildCommand: npm install
-    startCommand: node server.js
-    envVars:
-      - key: API_URL
-        value: https://onnx-verifier-api.onrender.com
-    healthCheckPath: /
