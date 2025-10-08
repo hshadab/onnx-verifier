@@ -34,6 +34,11 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 
+// Redirect root to UI
+app.get('/', (req, res) => {
+    res.redirect('/ui/');
+});
+
 // Serve UI files
 app.use('/ui', express.static('ui'));
 app.use('/models', express.static('models'));
