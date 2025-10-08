@@ -1899,74 +1899,33 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
         // Hugging Face model management
         let selectedHFModel = null;
 
-        // Curated list of popular ONNX models from onnx-community (under 500MB)
+        // Curated list of verified public ONNX models from onnx-community (under 500MB, no auth required)
         const hfModels = [
-            // Vision Models - Classification
-            { id: 'onnx-community/resnet-50', name: 'ResNet-50', file: 'model.onnx', sizeMB: '97.8' },
-            { id: 'onnx-community/resnet-18', name: 'ResNet-18', file: 'model.onnx', sizeMB: '44.7' },
-            { id: 'onnx-community/vit-base-patch16-224', name: 'ViT Base Patch16-224', file: 'model.onnx', sizeMB: '343' },
-            { id: 'onnx-community/vit-base-patch32-224', name: 'ViT Base Patch32-224', file: 'model.onnx', sizeMB: '343' },
-            { id: 'onnx-community/mobilenet-v2', name: 'MobileNet V2', file: 'model.onnx', sizeMB: '13.6' },
-            { id: 'onnx-community/mobilenet-v3-small', name: 'MobileNet V3 Small', file: 'model.onnx', sizeMB: '8.9' },
-            { id: 'onnx-community/efficientnet-b0', name: 'EfficientNet B0', file: 'model.onnx', sizeMB: '20' },
-            { id: 'onnx-community/efficientnet-b1', name: 'EfficientNet B1', file: 'model.onnx', sizeMB: '30' },
-            { id: 'onnx-community/efficientnet-b2', name: 'EfficientNet B2', file: 'model.onnx', sizeMB: '36' },
-            { id: 'onnx-community/convnext-tiny-224', name: 'ConvNeXt Tiny', file: 'model.onnx', sizeMB: '109' },
-            { id: 'onnx-community/convnext-small-224', name: 'ConvNeXt Small', file: 'model.onnx', sizeMB: '193' },
-            { id: 'onnx-community/densenet-121', name: 'DenseNet-121', file: 'model.onnx', sizeMB: '30.8' },
-            { id: 'onnx-community/shufflenet-v2-x1-0', name: 'ShuffleNet V2 x1.0', file: 'model.onnx', sizeMB: '8.8' },
-            { id: 'onnx-community/regnet-y-400mf', name: 'RegNet Y-400MF', file: 'model.onnx', sizeMB: '16.3' },
-
-            // Vision Models - Object Detection
-            { id: 'onnx-community/yolos-tiny', name: 'YOLOS Tiny', file: 'model.onnx', sizeMB: '19' },
-            { id: 'onnx-community/yolos-small', name: 'YOLOS Small', file: 'model.onnx', sizeMB: '86' },
-
-            // Vision Models - Segmentation
-            { id: 'onnx-community/segformer-b0-finetuned-ade-512-512', name: 'SegFormer B0', file: 'model.onnx', sizeMB: '14.3' },
-
-            // NLP Models - BERT Family
-            { id: 'onnx-community/distilbert-base-uncased', name: 'DistilBERT Base Uncased', file: 'model.onnx', sizeMB: '255' },
-            { id: 'onnx-community/distilbert-base-cased', name: 'DistilBERT Base Cased', file: 'model.onnx', sizeMB: '255' },
-            { id: 'onnx-community/tinybert-6l-768d', name: 'TinyBERT 6L-768D', file: 'model.onnx', sizeMB: '255' },
-            { id: 'onnx-community/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'model.onnx', sizeMB: '196' },
-
-            // NLP Models - RoBERTa Family
-            { id: 'onnx-community/distilroberta-base', name: 'DistilRoBERTa Base', file: 'model.onnx', sizeMB: '308' },
-
-            // NLP Models - Other Transformers
-            { id: 'onnx-community/albert-base-v2', name: 'ALBERT Base V2', file: 'model.onnx', sizeMB: '45' },
-            { id: 'onnx-community/electra-small-discriminator', name: 'ELECTRA Small', file: 'model.onnx', sizeMB: '52' },
-            { id: 'onnx-community/deberta-v3-small', name: 'DeBERTa V3 Small', file: 'model.onnx', sizeMB: '179' },
-
-            // NLP Models - Sentence Transformers
+            // NLP Models - Sentence Transformers (verified working)
             { id: 'onnx-community/all-MiniLM-L6-v2', name: 'all-MiniLM-L6-v2', file: 'model.onnx', sizeMB: '90' },
             { id: 'onnx-community/all-MiniLM-L12-v2', name: 'all-MiniLM-L12-v2', file: 'model.onnx', sizeMB: '130' },
             { id: 'onnx-community/paraphrase-MiniLM-L6-v2', name: 'paraphrase-MiniLM-L6-v2', file: 'model.onnx', sizeMB: '90' },
 
-            // Generative Models
+            // NLP Models - DistilBERT (verified working)
+            { id: 'onnx-community/distilbert-base-uncased', name: 'DistilBERT Base Uncased', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/distilbert-base-cased', name: 'DistilBERT Base Cased', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/distilroberta-base', name: 'DistilRoBERTa Base', file: 'model.onnx', sizeMB: '308' },
+
+            // NLP Models - Other Transformers (verified working)
+            { id: 'onnx-community/tinybert-6l-768d', name: 'TinyBERT 6L-768D', file: 'model.onnx', sizeMB: '255' },
+            { id: 'onnx-community/squeezebert-uncased', name: 'SqueezeBERT Uncased', file: 'model.onnx', sizeMB: '196' },
+            { id: 'onnx-community/albert-base-v2', name: 'ALBERT Base V2', file: 'model.onnx', sizeMB: '45' },
+            { id: 'onnx-community/electra-small-discriminator', name: 'ELECTRA Small', file: 'model.onnx', sizeMB: '52' },
+
+            // Generative Models (verified working)
             { id: 'onnx-community/gpt2', name: 'GPT-2', file: 'decoder_model.onnx', sizeMB: '487' },
-            { id: 'onnx-community/gpt2-medium', name: 'GPT-2 Medium', file: 'decoder_model.onnx', sizeMB: '1400' },
             { id: 'onnx-community/distilgpt2', name: 'DistilGPT-2', file: 'decoder_model.onnx', sizeMB: '319' },
             { id: 'onnx-community/t5-small', name: 'T5 Small', file: 'encoder_model.onnx', sizeMB: '242' },
-            { id: 'onnx-community/t5-base', name: 'T5 Base', file: 'encoder_model.onnx', sizeMB: '892' },
             { id: 'onnx-community/flan-t5-small', name: 'FLAN-T5 Small', file: 'encoder_model.onnx', sizeMB: '308' },
-            { id: 'onnx-community/flan-t5-base', name: 'FLAN-T5 Base', file: 'encoder_model.onnx', sizeMB: '990' },
 
-            // Audio Models - Whisper
+            // Audio Models (verified working)
             { id: 'onnx-community/whisper-tiny', name: 'Whisper Tiny', file: 'decoder_model.onnx', sizeMB: '77' },
-            { id: 'onnx-community/whisper-base', name: 'Whisper Base', file: 'decoder_model.onnx', sizeMB: '145' },
-            { id: 'onnx-community/whisper-small', name: 'Whisper Small', file: 'decoder_model.onnx', sizeMB: '483' },
-
-            // Audio Models - Other
-            { id: 'onnx-community/wav2vec2-base', name: 'Wav2Vec2 Base', file: 'model.onnx', sizeMB: '360' },
-
-            // Multimodal Models
-            { id: 'onnx-community/clip-vit-base-patch32', name: 'CLIP ViT Base Patch32', file: 'vision_model.onnx', sizeMB: '338' },
-            { id: 'onnx-community/clip-vit-base-patch16', name: 'CLIP ViT Base Patch16', file: 'vision_model.onnx', sizeMB: '343' },
-
-            // Specialized Models
-            { id: 'onnx-community/layoutlm-base-uncased', name: 'LayoutLM Base', file: 'model.onnx', sizeMB: '420' },
-            { id: 'onnx-community/table-transformer-detection', name: 'Table Transformer Detection', file: 'model.onnx', sizeMB: '108' }
+            { id: 'onnx-community/whisper-base', name: 'Whisper Base', file: 'decoder_model.onnx', sizeMB: '145' }
         ];
 
         // Populate Hugging Face model dropdown
