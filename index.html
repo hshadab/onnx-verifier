@@ -867,21 +867,24 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 console.log('[WASM] Starting to load verifier module...');
                 await init();
                 wasmLoaded = true;
+                wasmVerifier = WasmVerifier;
+                // Make functions available globally
+                window.hash_data = hash_data;
+                window.get_timestamp = get_timestamp;
                 console.log('[WASM] ✅ Verifier module loaded successfully');
-                console.log('[WASM] Testing hash_data function:', typeof window.hash_data);
             } catch (e) {
-                console.error('[WASM] ❌ Failed to load verifier:', e);
-                console.error('[WASM] Error details:', e.message, e.stack);
+                console.warn('[WASM] Client-side verification unavailable:', e.message);
+                console.log('[WASM] Server-side verification will still work');
+                wasmLoaded = false;
+                // Provide no-op fallbacks so the app doesn't crash
+                window.hash_data = () => '0x0000000000000000000000000000000000000000000000000000000000000000';
+                window.get_timestamp = () => Date.now();
             }
         }
 
         // Initialize on page load
         console.log('[WASM] Initializing WASM verifier on page load...');
         initWasm();
-
-        // Make functions available globally
-        window.hash_data = hash_data;
-        window.get_timestamp = get_timestamp;
         window.wasmVerifier = () => wasmVerifier;
         window.isWasmLoaded = () => wasmLoaded;
         window.createWasmVerifier = (modelHash) => {
@@ -897,12 +900,12 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             if (hostname === 'localhost' || hostname === '127.0.0.1') {
                 return 'http://localhost:9100';
             }
-            // For Render deployment - replace -ui with -api
+            // For Render deployment, use same hostname (single service)
             if (hostname.includes('onrender.com')) {
-                return `https://${hostname.replace('-ui', '-api')}`;
+                return `https://${hostname}`;
             }
-            // Fallback for other deployments
-            return 'https://onnx-verifier-api.onrender.com';
+            // For local development, use localhost backend
+            return `http://localhost:${window.location.port || 9100}`;
         })();
 
         // Tab switching function
