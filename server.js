@@ -618,6 +618,9 @@ app.get('/download-hf-model', async (req, res) => {
         const headers = {};
         if (process.env.HF_TOKEN) {
             headers['Authorization'] = `Bearer ${process.env.HF_TOKEN}`;
+            console.log(`[HF Proxy] Using authentication token`);
+        } else {
+            console.log(`[HF Proxy] WARNING: No HF_TOKEN found in environment variables`);
         }
 
         const response = await fetch(url, { headers });
