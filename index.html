@@ -1262,13 +1262,13 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             const modelFile = selectedExampleModel;
             const testInputsText = document.getElementById('testInputs').value;
             const errorDiv = document.getElementById('errorMessage');
-            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContainer = document.getElementById('resultContainer');
             const resultsContent = document.getElementById('resultsContent');
             const verifyBtn = document.getElementById('verifyBtn');
 
             // Clear previous results/errors
-            errorDiv.innerHTML = '';
-            resultsContainer.style.display = 'none';
+            if (errorDiv) errorDiv.innerHTML = '';
+            if (resultsContainer) resultsContainer.style.display = 'none';
 
             // Validation
             if (!modelFile) {
