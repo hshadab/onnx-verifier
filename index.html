@@ -589,7 +589,10 @@
                     <p style="color: #94a3b8; font-size: 13px; margin: 8px 0 10px 0;">
                         Select a model from <a href="https://huggingface.co/onnx-community" target="_blank" style="color: #a5b4fc;">onnx-community</a> (max 500MB)
                     </p>
-                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div class="model-loading-bar" id="hfLoadingBar">
+                        <div class="model-loading-bar-progress"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: flex-start; margin-top: 10px;">
                         <select id="hfModelSelect" style="flex: 1; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; font-size: 14px; color: #e2e8f0; cursor: pointer;">
                             <option value="">Loading models...</option>
                         </select>
@@ -1993,7 +1996,10 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
             }
 
             const model = validModels[modelIndex];
+            const hfLoadingBar = document.getElementById('hfLoadingBar');
 
+            // Show loading animation
+            if (hfLoadingBar) hfLoadingBar.classList.add('active');
             infoDiv.textContent = `Downloading ${model.name} (${model.sizeMB} MB)...`;
             infoDiv.style.color = '#a5b4fc';
 
@@ -2010,6 +2016,9 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 selectedHFModel = new File([blob], model.file, { type: 'application/octet-stream' });
                 selectedExampleModel = selectedHFModel; // Set as current model
 
+                // Hide loading animation
+                if (hfLoadingBar) hfLoadingBar.classList.remove('active');
+
                 // Update UI
                 document.getElementById('modelFileInfo').textContent =
                     `Hugging Face: ${model.name} (${model.sizeMB} MB)`;
@@ -2022,6 +2031,8 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 document.getElementById('testInputs').value = '[[1.0]]';
 
             } catch (error) {
+                // Hide loading animation on error
+                if (hfLoadingBar) hfLoadingBar.classList.remove('active');
                 infoDiv.textContent = 'Error downloading model: ' + error.message;
                 infoDiv.style.color = '#fca5a5';
                 console.error('Error loading Hugging Face model:', error);
@@ -2077,6 +2088,10 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                     throw new Error(`Model is too large (${fileSizeMB} MB). Maximum size is 500 MB.`);
                 }
 
+                const hfLoadingBar = document.getElementById('hfLoadingBar');
+
+                // Show loading animation
+                if (hfLoadingBar) hfLoadingBar.classList.add('active');
                 infoDiv.textContent = `Downloading ${targetFile.rfilename} (${fileSizeMB} MB)...`;
                 infoDiv.style.color = '#a5b4fc';
 
@@ -2098,6 +2113,9 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 selectedHFModel = new File([blob], targetFile.rfilename, { type: 'application/octet-stream' });
                 selectedExampleModel = selectedHFModel; // Set as current model
 
+                // Hide loading animation
+                if (hfLoadingBar) hfLoadingBar.classList.remove('active');
+
                 // Update UI
                 const modelName = modelId.replace('Xenova/', '');
                 document.getElementById('modelFileInfo').textContent =
@@ -2115,6 +2133,10 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 document.getElementById('hfModelInfo').textContent = '';
 
             } catch (error) {
+                // Hide loading animation on error
+                const hfLoadingBar = document.getElementById('hfLoadingBar');
+                if (hfLoadingBar) hfLoadingBar.classList.remove('active');
+
                 infoDiv.textContent = 'Error: ' + error.message;
                 infoDiv.style.color = '#fca5a5';
                 console.error('Error loading custom Hugging Face model:', error);
