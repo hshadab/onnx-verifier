@@ -1299,11 +1299,16 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 formData.append('model', modelFile);
                 formData.append('testInputs', JSON.stringify(testInputs));
 
-                // Call API
+                // Call API with 60 second timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
                 const response = await fetch(`${API_URL}/verify`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
 
                 const result = await response.json();
 
@@ -1318,8 +1323,12 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                     resultsContainer.style.display = 'none';
                 }
             } catch (error) {
-                errorDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
-                resultsContainer.style.display = 'none';
+                if (error.name === 'AbortError') {
+                    if (errorDiv) errorDiv.innerHTML = '<div class="error">Request timed out after 60 seconds. Large models may take longer on free tier. Try a smaller model or upgrade to paid tier.</div>';
+                } else {
+                    if (errorDiv) errorDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+                }
+                if (resultsContainer) resultsContainer.style.display = 'none';
             } finally {
                 verifyBtn.disabled = false;
                 verifyBtn.textContent = 'Generate and Verify zkML Proof';
@@ -1368,11 +1377,16 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 formData.append('model', modelFile);
                 formData.append('testInputs', JSON.stringify(testInputs));
 
-                // Call API
+                // Call API with 60 second timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
                 const response = await fetch(`${API_URL}/verify`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
 
                 const result = await response.json();
 
