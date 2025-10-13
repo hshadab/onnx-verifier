@@ -534,6 +534,37 @@
 
         <!-- Examples Tab (Default) -->
         <div id="examples-tab" class="tab-content active">
+            <!-- Interactive Demo Section -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border: 1px solid rgba(139, 92, 246, 0.3);">
+                <h2 style="color: #a5b4fc;">🎨 Try Interactive Demo</h2>
+                <p style="color: #94a3b8; font-size: 14px; margin: 10px 0 20px 0;">
+                    Draw a digit and watch zkML verification in action. The proof generated is yours to verify anywhere!
+                </p>
+
+                <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+                    <div style="flex: 0 0 auto;">
+                        <canvas id="drawingCanvas" width="280" height="280" style="border: 2px solid rgba(139, 92, 246, 0.5); border-radius: 8px; cursor: crosshair; background: #0f172a; touch-action: none;"></canvas>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button onclick="clearCanvas()" class="btn-primary" style="flex: 1; background: rgba(248, 113, 113, 0.2); border: 1px solid rgba(248, 113, 113, 0.3);">
+                                Clear
+                            </button>
+                            <button onclick="recognizeDigit()" class="btn-primary" style="flex: 1;">
+                                Recognize & Prove
+                            </button>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 250px;">
+                        <div id="demoStatus" style="padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                            👆 Draw a digit (0-9) on the canvas and click "Recognize & Prove" to see zkML verification in action.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; color: #94a3b8; font-size: 13px; margin: 20px 0;">
+                — OR —
+            </div>
+
             <div class="card">
                 <h2>Select an example model</h2>
 
@@ -1259,6 +1290,167 @@ onnx_model = convert_sklearn(model, initial_types=[...])</code>
                 event.target.closest('.scenario-btn').classList.add('active');
             }
         }
+
+        // ==================== Interactive Demo Canvas ====================
+        let canvas, ctx;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Initialize canvas when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('drawingCanvas');
+            if (!canvas) return;
+
+            ctx = canvas.getContext('2d');
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#ffffff';
+
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+        });
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            lastX = x;
+            lastY = y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            lastX = touch.clientX - rect.left;
+            lastY = touch.clientY - rect.top;
+            isDrawing = true;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!isDrawing) return;
+
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            lastX = x;
+            lastY = y;
+        }
+
+        function clearCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const demoStatus = document.getElementById('demoStatus');
+            if (demoStatus) {
+                demoStatus.innerHTML = '👆 Draw a digit (0-9) on the canvas and click "Recognize & Prove" to see zkML verification in action.';
+                demoStatus.style.color = '#94a3b8';
+            }
+        }
+
+        async function recognizeDigit() {
+            const demoStatus = document.getElementById('demoStatus');
+
+            try {
+                // Update status
+                demoStatus.innerHTML = '⏳ Loading MNIST model...';
+                demoStatus.style.color = '#a5b4fc';
+
+                // Load MNIST model if not already loaded
+                if (!selectedExampleModel || currentModelType !== 'mnist') {
+                    const response = await fetch('/models/mnist-12.onnx');
+                    if (!response.ok) throw new Error('Failed to load MNIST model');
+
+                    const blob = await response.blob();
+                    selectedExampleModel = new File([blob], 'mnist-12.onnx', { type: 'application/octet-stream' });
+                    currentModelType = 'mnist';
+                }
+
+                // Convert canvas to 28x28 grayscale array
+                demoStatus.innerHTML = '🎨 Processing your drawing...';
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const inputArray = canvasToMNISTInput(imageData);
+
+                // Set test inputs
+                document.getElementById('testInputs').value = JSON.stringify([inputArray], null, 2);
+
+                // Trigger verification
+                demoStatus.innerHTML = '🔐 Generating zkML proof... (this may take 30-60 seconds)';
+                demoStatus.style.color = '#fbbf24';
+
+                // Call the existing verifyModel function
+                await verifyModel();
+
+                // Update status on success (verifyModel will show results)
+                demoStatus.innerHTML = '✨ <strong>This proof is now yours to verify anywhere!</strong><br><br>The cryptographic proof below guarantees the prediction came from the MNIST model. Share it, verify it in any browser, or use it for compliance.';
+                demoStatus.style.color = '#86efac';
+
+            } catch (error) {
+                demoStatus.innerHTML = `❌ Error: ${error.message}`;
+                demoStatus.style.color = '#fca5a5';
+            }
+        }
+
+        function canvasToMNISTInput(imageData) {
+            // Downscale 280x280 to 28x28 and convert to grayscale
+            const scaled = [];
+            const scale = 280 / 28;
+
+            for (let y = 0; y < 28; y++) {
+                for (let x = 0; x < 28; x++) {
+                    // Sample the center of each scaled region
+                    const srcX = Math.floor(x * scale + scale / 2);
+                    const srcY = Math.floor(y * scale + scale / 2);
+                    const i = (srcY * 280 + srcX) * 4;
+
+                    // Average RGB channels (white drawing on dark background)
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const gray = (r + g + b) / 3 / 255; // Normalize to 0-1
+
+                    scaled.push(gray);
+                }
+            }
+
+            return scaled;
+        }
+        // ==================== End Interactive Demo ====================
 
         async function verifyModel() {
             // Use example model or Hugging Face model if selected
