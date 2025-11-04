@@ -19,16 +19,47 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 9100;
 
+// Path to JOLT-Atlas binary - check existence at startup
+const JOLT_BINARY = path.join(__dirname, 'bin', 'simple_jolt_proof');
+
 // Debug: Check if HF_TOKEN is available at startup
 console.log('[Startup] HF_TOKEN available:', process.env.HF_TOKEN ? 'YES' : 'NO');
 
 // Deployment mode: set to 'true' to disable JOLT proof generation
 const INFERENCE_ONLY_MODE = process.env.INFERENCE_ONLY_MODE === 'true';
 
+// Startup check: Verify JOLT binary exists (unless in inference-only mode)
+if (!INFERENCE_ONLY_MODE) {
+    const fs = require('fs');
+    if (!fs.existsSync(JOLT_BINARY)) {
+        console.error('');
+        console.error('╔════════════════════════════════════════════════════════════════╗');
+        console.error('║                    JOLT BINARY NOT FOUND                       ║');
+        console.error('╚════════════════════════════════════════════════════════════════╝');
+        console.error('');
+        console.error(`Expected location: ${JOLT_BINARY}`);
+        console.error('');
+        console.error('The JOLT-Atlas proof generation binary is missing.');
+        console.error('');
+        console.error('To build the binary, run:');
+        console.error('  cd /home/hshadab/robotics/tools');
+        console.error('  ./build_helper.sh');
+        console.error('');
+        console.error('Or to run in inference-only mode (no proofs):');
+        console.error('  INFERENCE_ONLY_MODE=true npm start');
+        console.error('');
+        process.exit(1);
+    }
+    console.log('[Startup] JOLT binary found:', JOLT_BINARY);
+}
+
 // Configure file upload (increased for large models like VGG-16, ResNet-50)
 const upload = multer({
     dest: 'uploads/',
-    limits: { fileSize: 500 * 1024 * 1024 } // 500MB max
+    limits: {
+        fileSize: 500 * 1024 * 1024,  // 500MB max for files
+        fieldSize: 50 * 1024 * 1024     // 50MB max for form fields (for large tensor JSON)
+    }
 });
 
 app.use(cors());
@@ -58,11 +89,98 @@ app.use((err, req, res, next) => {
 // In-memory verification cache
 const verifications = new Map();
 
+// Backpressure and circuit breaker controls
+const MAX_CONCURRENCY = parseInt(process.env.VERIFIER_MAX_CONCURRENCY || '1', 10);
+const MAX_QUEUE = parseInt(process.env.VERIFIER_MAX_QUEUE || '4', 10);
+const PROOF_TIMEOUT_MS = parseInt(process.env.VERIFIER_TIMEOUT_MS || '30000', 10);
+const CB_FAILURE_THRESHOLD = parseInt(process.env.VERIFIER_CB_FAILS || '3', 10);
+const CB_WINDOW_MS = parseInt(process.env.VERIFIER_CB_WINDOW_MS || '30000', 10);
+const CB_COOLDOWN_MS = parseInt(process.env.VERIFIER_CB_COOLDOWN_MS || '15000', 10);
+
+let active = 0;
+const queue = [];
+let circuitOpenUntil = 0;
+let failureTimes = [];
+
+function now() { return Date.now(); }
+
+function openCircuit() { circuitOpenUntil = now() + CB_COOLDOWN_MS; }
+
+function recordFailure() {
+    const t = now();
+    failureTimes.push(t);
+    failureTimes = failureTimes.filter(x => t - x <= CB_WINDOW_MS);
+    if (failureTimes.length >= CB_FAILURE_THRESHOLD) {
+        console.warn(`[CB] Opening circuit for ${CB_COOLDOWN_MS}ms (failures=${failureTimes.length})`);
+        openCircuit();
+        failureTimes = [];
+    }
+}
+
+function recordSuccess() { failureTimes = []; }
+
+function acquireSlot(res) {
+    return new Promise((resolve, reject) => {
+        if (now() < circuitOpenUntil) {
+            res.status(503).json({ success: false, error: 'Verifier overloaded (circuit open). Please retry shortly.' });
+            return reject(new Error('circuit open'));
+        }
+        if (active < MAX_CONCURRENCY) {
+            active++;
+            return resolve(() => releaseSlot());
+        }
+        if (queue.length < MAX_QUEUE) {
+            queue.push(() => { active++; resolve(() => releaseSlot()); });
+            return;
+        }
+        res.setHeader('Retry-After', '2');
+        res.status(429).json({ success: false, error: 'Too many concurrent proofs. Please retry.' });
+        return reject(new Error('queue full'));
+    });
+}
+
+function releaseSlot() {
+    active = Math.max(0, active - 1);
+    const next = queue.shift();
+    if (next) setImmediate(next);
+}
+
 /**
  * Calculate model hash
  */
 function hashModel(buffer) {
     return '0x' + crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+/**
+ * Create inference commitment (matches Python implementation)
+ * Binds proof to MobileNetV2 inference output
+ */
+function createInferenceCommitment(top1_id, confidence, modelHash) {
+    // Quantize confidence to 4 decimal places (match Python)
+    const confidenceQuantized = Math.floor(confidence * 10000);
+
+    // Pack data: top1_id (4 bytes LE) + confidence (4 bytes LE) + model_hash (32 bytes)
+    const buffer = Buffer.alloc(4 + 4 + 32);
+    buffer.writeUInt32LE(top1_id, 0);
+    buffer.writeUInt32LE(confidenceQuantized, 4);
+
+    // Remove '0x' prefix from model hash and convert to buffer
+    const modelHashClean = modelHash.startsWith('0x') ? modelHash.slice(2) : modelHash;
+    Buffer.from(modelHashClean, 'hex').copy(buffer, 8);
+
+    // Hash with SHA3-256
+    const commitment = crypto.createHash('sha3-256').update(buffer).digest('hex');
+
+    return commitment;
+}
+
+/**
+ * Verify inference commitment
+ */
+function verifyInferenceCommitment(expectedCommitment, top1_id, confidence, modelHash) {
+    const recomputed = createInferenceCommitment(top1_id, confidence, modelHash);
+    return recomputed === expectedCommitment;
 }
 
 /**
@@ -179,8 +297,9 @@ async function runOnnxInference(modelPath, inputs) {
  * In INFERENCE_ONLY_MODE, this generates mock proof data for deployment environments
  * where the JOLT binary is not available.
  */
-async function generateJOLTProof(modelHash, testResults) {
+async function generateJOLTProof(modelHash, testResults, opts = {}) {
     const startTime = Date.now();
+    const timeoutMs = Math.max(1000, Math.min(PROOF_TIMEOUT_MS, opts.timeoutMs || PROOF_TIMEOUT_MS));
 
     // INFERENCE_ONLY_MODE: Return mock proof data without JOLT binary
     if (INFERENCE_ONLY_MODE) {
@@ -238,13 +357,7 @@ async function generateJOLTProof(modelHash, testResults) {
         console.log(`[JOLT-Atlas] Model hash: ${modelHash.substring(0, 16)}...`);
         console.log(`[JOLT-Atlas] Test cases: ${testResults.length}`);
 
-        // Path to JOLT-Atlas binary (local to this repository)
-        const JOLT_BINARY = path.join(__dirname, 'bin', 'simple_jolt_proof');
-
-        // Check if binary exists
-        if (!require('fs').existsSync(JOLT_BINARY)) {
-            throw new Error(`JOLT-Atlas binary not found at: ${JOLT_BINARY}`);
-        }
+        // JOLT_BINARY is defined at top of file and checked at startup
 
         // Run JOLT proof generation
         return new Promise((resolve, reject) => {
@@ -276,7 +389,13 @@ async function generateJOLTProof(modelHash, testResults) {
                 stderr += data.toString();
             });
 
+            // Enforce timeout for the child process
+            const to = setTimeout(() => {
+                try { joltProcess.kill('SIGKILL'); } catch (_) {}
+            }, timeoutMs);
+
             joltProcess.on('close', (code) => {
+                clearTimeout(to);
                 const generationTime = Date.now() - startTime;
 
                 if (code !== 0) {
@@ -364,8 +483,12 @@ async function generateJOLTProof(modelHash, testResults) {
  */
 app.post('/verify', upload.single('model'), async (req, res) => {
     let modelPath = null;
+    let release = null;
 
     try {
+        // Backpressure gate
+        release = await acquireSlot(res);
+
         if (!req.file) {
             return res.status(400).json({
                 success: false,
@@ -399,11 +522,57 @@ app.post('/verify', upload.single('model'), async (req, res) => {
 
         console.log(`[VERIFY] Model: ${modelHash.substring(0, 16)}... | Tests: ${testInputs.length}`);
 
+        // Extract commitment metadata from request (Phase 2: Commitment Binding)
+        const requestCommitment = req.body.commitment || '';
+        const requestTop1Id = req.body.top1_id ? parseInt(req.body.top1_id) : null;
+        const requestConfidence = req.body.confidence ? parseFloat(req.body.confidence) : null;
+
+        // Validate commitment if provided
+        let commitmentValid = false;
+        let commitmentMessage = '';
+        if (requestCommitment && requestTop1Id !== null && requestConfidence !== null) {
+            console.log(`[COMMITMENT] Validating commitment: ${requestCommitment.substring(0, 16)}...`);
+            console.log(`[COMMITMENT] Claimed: top1=${requestTop1Id}, confidence=${requestConfidence.toFixed(4)}`);
+
+            // Recompute commitment from claimed values
+            const recomputedCommitment = createInferenceCommitment(
+                requestTop1Id,
+                requestConfidence,
+                modelHash
+            );
+
+            commitmentValid = (recomputedCommitment === requestCommitment);
+
+            if (commitmentValid) {
+                console.log(`[COMMITMENT] ✓ Valid - commitment matches claimed values`);
+                commitmentMessage = 'Commitment validated successfully';
+            } else {
+                console.error(`[COMMITMENT] ✗ INVALID - commitment mismatch!`);
+                console.error(`[COMMITMENT] Expected: ${recomputedCommitment}`);
+                console.error(`[COMMITMENT] Received: ${requestCommitment}`);
+                commitmentMessage = 'Commitment validation FAILED - values do not match commitment';
+
+                // Fail fast: reject proof request if commitment invalid
+                return res.status(400).json({
+                    success: false,
+                    error: 'Commitment validation failed',
+                    details: {
+                        message: commitmentMessage,
+                        expected: recomputedCommitment,
+                        received: requestCommitment
+                    }
+                });
+            }
+        } else {
+            console.log(`[COMMITMENT] No commitment provided (backward compatibility mode)`);
+            commitmentMessage = 'No commitment provided';
+        }
+
         // Run ONNX inference
         const testResults = await runOnnxInference(modelPath, testInputs);
 
-        // Generate REAL JOLT-Atlas proof (NOT simulated)
-        const proof = await generateJOLTProof(modelHash, testResults);
+        // Generate REAL JOLT-Atlas proof (NOT simulated) with timeout
+        const proof = await generateJOLTProof(modelHash, testResults, { timeoutMs: PROOF_TIMEOUT_MS });
 
         // Create claims manifest (mirrors JOLT's verifier closure)
         const firstTest = testResults[0];
@@ -445,7 +614,15 @@ app.post('/verify', upload.single('model'), async (req, res) => {
             mode: INFERENCE_ONLY_MODE ? 'INFERENCE_ONLY' : 'FULL_VERIFICATION',
             modeNote: INFERENCE_ONLY_MODE ?
                 'ONNX inference completed successfully. JOLT zkML proof generation disabled in deployment mode.' :
-                'Full zkML verification with JOLT-Atlas cryptographic proof'
+                'Full zkML verification with JOLT-Atlas cryptographic proof',
+            // Phase 2: Commitment binding results
+            commitment: {
+                provided: requestCommitment || null,
+                validated: commitmentValid,
+                message: commitmentMessage,
+                top1_id: requestTop1Id,
+                confidence: requestConfidence
+            }
         };
 
         // Store verification
@@ -456,6 +633,7 @@ app.post('/verify', upload.single('model'), async (req, res) => {
             console.log(`[MODE] Running in INFERENCE_ONLY mode - JOLT proofs disabled`);
         }
 
+        recordSuccess();
         res.json({
             success: true,
             ...verification
@@ -463,6 +641,7 @@ app.post('/verify', upload.single('model'), async (req, res) => {
 
     } catch (error) {
         console.error('[ERROR]', error.message);
+        recordFailure();
         res.status(500).json({
             success: false,
             error: error.message
@@ -476,6 +655,7 @@ app.post('/verify', upload.single('model'), async (req, res) => {
                 // Ignore cleanup errors
             }
         }
+        if (release) try { release(); } catch {}
     }
 });
 
@@ -602,7 +782,9 @@ app.get('/health', (req, res) => {
         service: 'zkml-verifier',
         status: 'healthy',
         verificationsCount: verifications.size,
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        concurrency: { active, queue: queue.length, max: MAX_CONCURRENCY },
+        circuit: { open: now() < circuitOpenUntil, openForMs: Math.max(0, circuitOpenUntil - now()) }
     });
 });
 
